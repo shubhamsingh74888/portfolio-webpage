@@ -1,7 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const nodemailer = require('nodemailer');
-const Contact = require('../models/contact');
+//const Contact = require('../models/contact');
+const Contact = require('../models/Contact');
 const { body, validationResult } = require('express-validator');
 
 // Create transporter for nodemailer

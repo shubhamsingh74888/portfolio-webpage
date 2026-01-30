@@ -1,0 +1,55 @@
+version: "3.8"
+
+services:
+  # 1. Backend API
+  backend:
+    build:
+      context: ./backend
+    container_name: portfolio-backend
+    ports:
+      - "5001:5000"
+    environment:
+      - MONGODB_URI=mongodb://admin:password@mongodb:27017/portfolio?authSource=admin
+      - PORT=5000
+    depends_on:
+      - mongodb
+    networks:
+      - portfolio-nw
+    restart: always
+
+  # 2. Frontend (Vite)
+  frontend:
+    build:
+      context: ./frontend
+    container_name: portfolio-frontend
+    ports:
+      - "5173:5173"
+    environment:
+      - VITE_API_URL=http://localhost:5000/api  # Directs frontend to backend
+    depends_on:
+      - backend
+    networks:
+      - portfolio-nw
+    restart: always
+
+  # 3. Database
+  mongodb:
+    image: mongo:latest
+    container_name: mongodb
+    ports:
+      - "27017:27017"
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=admin
+      - MONGO_INITDB_ROOT_PASSWORD=password
+    volumes:
+      - mongo-data:/data/db
+    networks:
+      - portfolio-nw
+    restart: always
+
+networks:
+  portfolio-nw:
+    driver: bridge
+
+volumes:
+  mongo-data:
