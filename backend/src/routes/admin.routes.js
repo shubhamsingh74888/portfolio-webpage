@@ -2,11 +2,11 @@ const express = require('express');
 const router = express.Router();
 const auth = require('../middleware/auth');
 const Admin = require('../models/admin');
-const Project = require('../models/project');
+const Project = require('../models/Project');
 const Certification = require('../models/certification');
 const Blog = require('../models/blog');
 const Testimonial = require('../models/testimonial');
-const Contact = require('../models/contact');
+const Contact = require('../models/Contact');
 
 // Middleware to check admin role
 const requireAdmin = (req, res, next) => {
