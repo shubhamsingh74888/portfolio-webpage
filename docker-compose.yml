@@ -17,15 +17,13 @@ services:
       - portfolio-nw
     restart: always
 
-  # 2. Frontend (Vite)
   frontend:
     build:
       context: ./frontend
+      dockerfile: Dockerfile
     container_name: portfolio-frontend
     ports:
-      - "5173:5173"
-    environment:
-      - VITE_API_URL=http://localhost:5000/api  # Directs frontend to backend
+      - "80:80"
     depends_on:
       - backend
     networks:
