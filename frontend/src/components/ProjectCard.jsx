@@ -35,6 +35,27 @@ export default function ProjectCard({ project, index }) {
         <p className="text-gray-600 dark:text-gray-300 mb-4">
           {project.description}
         </p>
+
+        {/* Video section – supports YouTube embed or direct .mp4 */}
+        {project.videoUrl && (
+          <div className="mb-4">
+            {project.videoUrl.includes('youtube.com/embed') ? (
+              <iframe
+                className="w-full rounded-lg aspect-video"
+                src={project.videoUrl}
+                title="Project demo"
+                frameBorder="0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+              ></iframe>
+            ) : (
+              <video controls className="w-full rounded-lg shadow-md" preload="metadata">
+                <source src={project.videoUrl} type="video/mp4" />
+                Your browser does not support the video tag.
+              </video>
+            )}
+          </div>
+        )}
         
         <div className="flex flex-wrap gap-2 mb-4">
           {project.technologies?.slice(0, 4).map((tech) => (
@@ -65,9 +86,10 @@ export default function ProjectCard({ project, index }) {
         
         <div className="flex justify-between items-center pt-4 border-t border-gray-200 dark:border-gray-700">
           <div className="flex space-x-3">
-            {project.githubUrl && (
+            {/* FIXED: Use project.repository instead of project.githubUrl */}
+            {project.repository && (
               <a
-                href={project.githubUrl}
+                href={project.repository}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="p-2 text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"

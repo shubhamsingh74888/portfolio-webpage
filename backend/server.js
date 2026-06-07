@@ -72,12 +72,13 @@ mongoose.connect(mongoUri, {
 console.log('Routes loading...');
 
 // API Routes
-// Temporarily commented out for testing
-// app.use('/api/auth', authRoutes);
-// app.use('/api/admin', adminRoutes);
-// app.use('/api/projects', projectRoutes);
-// app.use('/api/certifications', certificationRoutes);
-// app.use('/api/contact', contactRoutes);
+app.use('/api/auth', authRoutes);
+app.use('/api/admin', adminRoutes);
+app.use('/api/projects', projectRoutes);
+app.use('/api/certifications', certificationRoutes);
+app.use('/api/contact', contactRoutes);
+app.use('/api/blog', blogRoutes);
+app.use('/api/testimonials', testimonialRoutes);
 // app.use('/api/blogs', blogRoutes);
 // app.use('/api/testimonials', testimonialRoutes);
 
