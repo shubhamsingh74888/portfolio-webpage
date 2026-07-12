@@ -1,4 +1,4 @@
-const Project = require('../models/project');
+const Project = require('../models/Project');
 
 exports.getAllProjects = async (req, res) => {
   try {
@@ -37,11 +37,9 @@ exports.getAllProjects = async (req, res) => {
 exports.getProjectById = async (req, res) => {
   try {
     const project = await Project.findById(req.params.id);
-    
     if (!project) {
       return res.status(404).json({ success: false, message: 'Project not found' });
     }
-
     res.json({ success: true, data: project });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -53,7 +51,6 @@ exports.getFeaturedProjects = async (req, res) => {
     const projects = await Project.find({ isFeatured: true })
       .sort({ createdAt: -1 })
       .limit(6);
-
     res.json({ success: true, count: projects.length, data: projects });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -64,7 +61,6 @@ exports.createProject = async (req, res) => {
   try {
     const project = new Project(req.body);
     await project.save();
-    
     res.status(201).json({ success: true, data: project });
   } catch (error) {
     res.status(400).json({ success: false, message: error.message });
@@ -78,11 +74,9 @@ exports.updateProject = async (req, res) => {
       req.body,
       { new: true, runValidators: true }
     );
-
     if (!project) {
       return res.status(404).json({ success: false, message: 'Project not found' });
     }
-
     res.json({ success: true, data: project });
   } catch (error) {
     res.status(400).json({ success: false, message: error.message });
@@ -92,11 +86,9 @@ exports.updateProject = async (req, res) => {
 exports.deleteProject = async (req, res) => {
   try {
     const project = await Project.findByIdAndDelete(req.params.id);
-
     if (!project) {
       return res.status(404).json({ success: false, message: 'Project not found' });
     }
-
     res.json({ success: true, message: 'Project deleted successfully' });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });

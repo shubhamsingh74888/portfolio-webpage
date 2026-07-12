@@ -27,5 +27,7 @@ Thumbs.db
 
 # Logs
 logs/
-*.logvite
-*.bak
+*.log.env.development
+.env.production
+.env.local
+.env
