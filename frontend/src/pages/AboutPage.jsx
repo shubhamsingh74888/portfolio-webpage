@@ -1,27 +1,27 @@
-import { Helmet } from 'react-helmet-async'
-import { motion } from 'framer-motion'
+import React from 'react';
 
 export default function AboutPage() {
   return (
-    <>
-      <Helmet>
-        <title>About Me | DevOps Engineer</title>
-        <meta name="description" content="Learn about my background and expertise in DevOps" />
-      </Helmet>
-      <div className="min-h-screen py-24 px-4">
-        <div className="max-w-4xl mx-auto">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-          >
-            <h1 className="text-4xl font-bold mb-8">About Me</h1>
-            <p className="text-lg text-gray-600 dark:text-gray-300 mb-6">
-              I am a passionate DevOps engineer with extensive experience in cloud technologies and infrastructure automation.
-            </p>
-          </motion.div>
+    <div className="container mx-auto px-6 py-12">
+      <h2 className="text-3xl font-bold mb-8">About Me</h2>
+      
+      <div className="flex flex-col md:flex-row gap-8 items-center">
+        {/* Your Profile Picture */}
+        <img 
+          src="/profile.jpg" 
+          alt="Shubham Singh" 
+          className="w-48 h-48 rounded-full shadow-lg object-cover" 
+        />
+        
+        <div>
+          <p className="text-gray-300 leading-relaxed mb-4">
+            I am a Cloud Support Engineer and DevOps practitioner with a strong foundation in AWS infrastructure, Kubernetes, and CI/CD automation. Currently pursuing my MCA at Garden City University (expected June 2026), I specialize in troubleshooting complex deployments, optimizing cloud costs, and implementing robust monitoring solutions.
+          </p>
+          <p className="text-gray-300 leading-relaxed">
+            Recently, I completed a Technical Internship at CSIR-IIP (Govt. of India), where I built an end-to-end Machine Learning pipeline for battery life prediction, reducing manual data handling by 40% through Bash and Python automation. I am passionate about root cause analysis and building reliable, scalable systems.
+          </p>
         </div>
       </div>
-    </>
-  )
+    </div>
+  );
 }
