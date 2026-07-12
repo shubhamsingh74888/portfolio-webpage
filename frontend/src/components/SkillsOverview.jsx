@@ -1,127 +1,91 @@
 import { motion } from 'framer-motion'
 import { Link } from 'react-router-dom'
-import {
-  CloudIcon,
-  ServerIcon,
-  CodeBracketIcon,
-  ChartBarIcon
-} from '@heroicons/react/24/outline'
 
-const skillCategories = [
-  {
-    title: 'Cloud Platforms',
-    icon: CloudIcon,
-    color: 'from-orange-500 to-yellow-500',
-    skills: [
-      { name: 'AWS', level: 90 },
-      { name: 'Azure', level: 50 },
-      { name: 'Google Cloud', level: 50 },
-    ]
-  },
-  {
-    title: 'Containerization & IaC',
-    icon: ServerIcon,
-    color: 'from-blue-500 to-cyan-500',
-    skills: [
-      { name: 'Docker', level: 90 },
-      { name: 'Kubernetes (EKS)', level: 85 },
-      { name: 'Terraform', level: 85 },
-    ]
-  },
-  {
-    title: 'CI/CD & Monitoring',
-    icon: ChartBarIcon,
-    color: 'from-purple-500 to-pink-500',
-    skills: [
-      { name: 'Jenkins', level: 85 },
-      { name: 'ArgoCD', level: 80 },
-      { name: 'Prometheus & Grafana', level: 80 },
-      { name: 'CloudWatch', level: 85 },
-    ]
-  },
-  {
-    title: 'Scripting & Automation',
-    icon: CodeBracketIcon,
-    color: 'from-green-500 to-emerald-500',
-    skills: [
-      { name: 'Linux / Bash', level: 85 },
-      { name: 'Python', level: 85 },
-      { name: 'Git', level: 90 },
-    ]
-  }
+const skills = [
+  { name: 'AWS',        level: 95, color: '#F97316' },
+  { name: 'Docker',     level: 95, color: '#3B82F6' },
+  { name: 'Terraform',  level: 94, color: '#A855F7' },
+  { name: 'Kubernetes', level: 92, color: '#06B6D4' },
+  { name: 'Linux',      level: 90, color: '#EAB308' },
+  { name: 'Python',     level: 85, color: '#22C55E' },
+]
+
+const levels = [
+  { label: 'Expert'     },
+  { label: 'Advanced'   },
+  { label: 'Proficient' },
+  { label: 'Familiar'   },
 ]
 
 export default function SkillsOverview() {
   return (
-    <section className="py-12 px-4 bg-white dark:bg-gray-900">
-      <div className="max-w-7xl mx-auto">
+    <section className="py-20 px-6 bg-white dark:bg-gray-900 transition-colors duration-300">
+      <div className="max-w-4xl mx-auto">
 
-        {/* Header */}
-        <div className="text-center mb-10">
-          <h2 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white mb-2">
-            Technical Skills
+        {/* Heading */}
+        <div className="text-center mb-14">
+          <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-3">
+            Core Skills
           </h2>
-          <p className="text-sm text-gray-500 dark:text-gray-400">
-            Core DevOps toolchain expertise
+          <p className="text-gray-500 dark:text-gray-400 text-base">
+            Technologies I work with every day
           </p>
         </div>
 
-        {/* Grid — 4 columns, compact cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {skillCategories.map((category, index) => (
-            <motion.div
-              key={category.title}
-              initial={{ opacity: 0, y: 16 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.4, delay: index * 0.08 }}
-              className="bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-xl p-4 hover:shadow-md transition-shadow duration-200"
-            >
-              {/* Card header */}
-              <div className="flex items-center gap-2 mb-4">
-                <div className={`w-7 h-7 bg-gradient-to-br ${category.color} rounded-lg flex items-center justify-center flex-shrink-0`}>
-                  <category.icon className="w-4 h-4 text-white" />
-                </div>
-                <h3 className="text-xs font-semibold text-gray-800 dark:text-white leading-tight">
-                  {category.title}
-                </h3>
-              </div>
+        {/* Chart */}
+        <div className="relative">
 
-              {/* Skill bars */}
-              <div className="space-y-3">
-                {category.skills.map((skill, skillIndex) => (
-                  <div key={skill.name}>
-                    <div className="flex justify-between items-center mb-1">
-                      <span className="text-[11px] font-medium text-gray-600 dark:text-gray-300">
-                        {skill.name}
-                      </span>
-                      <span className="text-[10px] font-bold text-blue-500 dark:text-blue-400">
-                        {skill.level}%
-                      </span>
-                    </div>
-                    <div className="h-1.5 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
-                      <motion.div
-                        initial={{ width: 0 }}
-                        whileInView={{ width: `${skill.level}%` }}
-                        viewport={{ once: true }}
-                        transition={{ duration: 0.8, delay: skillIndex * 0.1 + index * 0.05 }}
-                        className={`h-full bg-gradient-to-r ${category.color} rounded-full`}
-                      />
-                    </div>
-                  </div>
-                ))}
+          {/* Horizontal grid lines + labels */}
+          <div
+            className="absolute inset-0 flex flex-col justify-between pointer-events-none"
+            style={{ bottom: '2.5rem', top: 0 }}
+          >
+            {levels.map((l) => (
+              <div key={l.label} className="flex items-center gap-3">
+                <span className="text-xs text-gray-400 dark:text-gray-500 w-20 text-right shrink-0">
+                  {l.label}
+                </span>
+                <div className="flex-1 border-t border-gray-200 dark:border-gray-700" />
               </div>
-            </motion.div>
-          ))}
+            ))}
+          </div>
+
+          {/* Bars */}
+          <div className="flex items-end justify-center gap-4 sm:gap-6 pt-4 pb-10 pl-24">
+            {skills.map((skill, i) => (
+              <div key={skill.name} className="flex flex-col items-center gap-2 flex-1 max-w-[120px]">
+                <div className="relative w-full flex items-end" style={{ height: '220px' }}>
+                  <motion.div
+                    initial={{ height: 0 }}
+                    animate={{ height: `${skill.level}%` }}
+                    transition={{ duration: 0.9, delay: i * 0.1, ease: 'easeOut' }}
+                    style={{ backgroundColor: skill.color }}
+                    className="w-full rounded-t-xl flex items-end justify-center pb-3"
+                  >
+                    <div className="text-center">
+                      <span className="text-2xl font-bold text-white">{skill.level}</span>
+                      <span className="text-sm text-white/80">%</span>
+                    </div>
+                  </motion.div>
+                </div>
+                <span className="text-xs sm:text-sm text-gray-600 dark:text-gray-300 font-medium text-center">
+                  {skill.name}
+                </span>
+              </div>
+            ))}
+          </div>
         </div>
 
-        {/* View all link */}
+        {/* Button */}
         <div className="text-center mt-8">
           <Link
             to="/skills"
-            className="inline-flex items-center gap-2 px-5 py-2 text-sm font-medium text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800 rounded-full hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
+            className="inline-flex items-center gap-2 px-7 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold rounded-xl hover:from-blue-700 hover:to-indigo-700 transition-all shadow-lg hover:shadow-blue-500/25 hover:shadow-xl"
           >
-            View all skills →
+            View Full Skills
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+            </svg>
           </Link>
         </div>
       </div>

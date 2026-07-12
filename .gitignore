@@ -27,4 +27,5 @@ Thumbs.db
 
 # Logs
 logs/
-*.log
+*.logvite
+*.bak

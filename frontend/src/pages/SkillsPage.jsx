@@ -1,196 +1,116 @@
 import { motion } from 'framer-motion'
-import { Helmet } from 'react-helmet-async'
 import {
-  CloudIcon,
-  ServerIcon,
-  CodeBracketIcon,
-  ChartBarIcon
+  CloudIcon, ServerIcon, ShieldCheckIcon,
+  CpuChipIcon, CodeBracketIcon, ChartBarIcon
 } from '@heroicons/react/24/outline'
 
 const skillCategories = [
   {
-    title: 'Cloud Platforms',
-    icon: CloudIcon,
-    color: 'from-orange-500 to-yellow-500',
-    bg: 'bg-orange-50 dark:bg-orange-900/10',
-    border: 'border-orange-100 dark:border-orange-800/30',
+    title: 'Cloud Platforms', icon: CloudIcon,
     skills: [
-      { name: 'AWS', level: 90, note: 'EC2, S3, Lambda, EKS, CloudWatch, IAM' },
-      { name: 'Azure', level: 50, note: 'AKS, Blob Storage, Azure DevOps' },
-      { name: 'Google Cloud', level: 50, note: 'GKE, Cloud Run, BigQuery basics' },
+      { name: 'AWS', level: 95, color: 'from-orange-500 to-yellow-500' },
+      { name: 'Azure', level: 90, color: 'from-blue-500 to-cyan-500' },
+      { name: 'Google Cloud', level: 85, color: 'from-green-500 to-emerald-500' },
+      { name: 'DigitalOcean', level: 80, color: 'from-blue-400 to-cyan-400' },
     ]
   },
   {
-    title: 'Containerization & IaC',
-    icon: ServerIcon,
-    color: 'from-blue-500 to-cyan-500',
-    bg: 'bg-blue-50 dark:bg-blue-900/10',
-    border: 'border-blue-100 dark:border-blue-800/30',
+    title: 'Containerization', icon: ServerIcon,
     skills: [
-      { name: 'Docker', level: 90, note: 'Multi-stage builds, Compose, optimization' },
-      { name: 'Kubernetes (EKS)', level: 85, note: 'Deployments, Helm, StorageClass, ArgoCD' },
-      { name: 'Terraform', level: 85, note: 'Modules, remote state, S3/DynamoDB locking' },
+      { name: 'Docker', level: 95, color: 'from-blue-500 to-indigo-500' },
+      { name: 'Kubernetes', level: 92, color: 'from-blue-600 to-cyan-500' },
+      { name: 'Docker Compose', level: 88, color: 'from-blue-400 to-indigo-400' },
+      { name: 'Podman', level: 75, color: 'from-purple-500 to-pink-500' },
     ]
   },
   {
-    title: 'CI/CD & Monitoring',
-    icon: ChartBarIcon,
-    color: 'from-purple-500 to-pink-500',
-    bg: 'bg-purple-50 dark:bg-purple-900/10',
-    border: 'border-purple-100 dark:border-purple-800/30',
+    title: 'Infrastructure as Code', icon: CodeBracketIcon,
     skills: [
-      { name: 'Jenkins', level: 85, note: 'Shared Libraries, pipelines, SNS hooks' },
-      { name: 'ArgoCD', level: 80, note: 'GitOps, sync policies, OutOfSync resolution' },
-      { name: 'Prometheus & Grafana', level: 80, note: 'Alerting, dashboards, Loki integration' },
-      { name: 'CloudWatch', level: 85, note: 'Alarms, log groups, metric filters' },
+      { name: 'Terraform', level: 94, color: 'from-purple-500 to-pink-500' },
+      { name: 'CloudFormation', level: 85, color: 'from-orange-500 to-amber-500' },
+      { name: 'Ansible', level: 82, color: 'from-red-500 to-orange-500' },
+      { name: 'Pulumi', level: 70, color: 'from-yellow-500 to-red-500' },
     ]
   },
   {
-    title: 'Scripting & Automation',
-    icon: CodeBracketIcon,
-    color: 'from-green-500 to-emerald-500',
-    bg: 'bg-green-50 dark:bg-green-900/10',
-    border: 'border-green-100 dark:border-green-800/30',
+    title: 'CI/CD Tools', icon: ChartBarIcon,
     skills: [
-      { name: 'Linux / Bash', level: 85, note: 'ETL pipelines, system automation, cron' },
-      { name: 'Python', level: 85, note: 'ML pipelines, boto3, data processing' },
-      { name: 'Git', level: 90, note: 'Branching strategies, PR workflows, GitHub Actions' },
+      { name: 'Jenkins', level: 90, color: 'from-red-500 to-pink-500' },
+      { name: 'GitLab CI', level: 88, color: 'from-orange-500 to-red-500' },
+      { name: 'GitHub Actions', level: 85, color: 'from-gray-600 to-gray-800' },
+      { name: 'ArgoCD', level: 85, color: 'from-orange-400 to-pink-500' },
     ]
-  }
+  },
+  {
+    title: 'Monitoring & Logging', icon: CpuChipIcon,
+    skills: [
+      { name: 'Prometheus', level: 88, color: 'from-orange-500 to-red-500' },
+      { name: 'Grafana', level: 90, color: 'from-orange-600 to-red-600' },
+      { name: 'CloudWatch', level: 88, color: 'from-blue-500 to-indigo-500' },
+      { name: 'ELK Stack', level: 82, color: 'from-green-500 to-emerald-500' },
+    ]
+  },
+  {
+    title: 'Security Tools', icon: ShieldCheckIcon,
+    skills: [
+      { name: 'Trivy', level: 85, color: 'from-blue-500 to-cyan-500' },
+      { name: 'SonarQube', level: 83, color: 'from-purple-500 to-pink-500' },
+      { name: 'Aqua Security', level: 80, color: 'from-green-500 to-teal-500' },
+      { name: 'Hashicorp Vault', level: 78, color: 'from-yellow-500 to-orange-500' },
+    ]
+  },
 ]
-
-const getLevelLabel = (level) => {
-  if (level >= 88) return 'Expert'
-  if (level >= 80) return 'Advanced'
-  if (level >= 60) return 'Intermediate'
-  return 'Beginner'
-}
-
-const getLevelColor = (level) => {
-  if (level >= 88) return 'text-blue-600 bg-blue-50 dark:bg-blue-900/20 dark:text-blue-400'
-  if (level >= 80) return 'text-purple-600 bg-purple-50 dark:bg-purple-900/20 dark:text-purple-400'
-  if (level >= 60) return 'text-amber-600 bg-amber-50 dark:bg-amber-900/20 dark:text-amber-400'
-  return 'text-gray-600 bg-gray-100 dark:bg-gray-700 dark:text-gray-400'
-}
 
 export default function SkillsPage() {
   return (
-    <>
-      <Helmet>
-        <title>Skills | Shubham Singh — DevOps Engineer</title>
-        <meta name="description" content="Technical skills and expertise in DevOps, Cloud, CI/CD, and automation" />
-      </Helmet>
+    <div className="min-h-screen bg-gray-950 py-16 px-6">
+      <div className="max-w-6xl mx-auto">
+        <div className="text-center mb-14">
+          <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
+            Technical Skills & Tools
+          </h2>
+          <p className="text-gray-400 max-w-2xl mx-auto">
+            Comprehensive expertise across the DevOps toolchain and cloud ecosystem
+          </p>
+        </div>
 
-      <div className="min-h-screen py-20 px-4 bg-gray-50 dark:bg-gray-900">
-        <div className="max-w-5xl mx-auto">
-
-          {/* Page header */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            className="mb-12"
-          >
-            <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-3">
-              Technical Skills
-            </h1>
-            <p className="text-gray-500 dark:text-gray-400 max-w-xl">
-              Hands-on expertise across the DevOps toolchain — from cloud infrastructure
-              to CI/CD automation and scripting.
-            </p>
-          </motion.div>
-
-          {/* Skill categories */}
-          <div className="space-y-6">
-            {skillCategories.map((category, catIndex) => (
-              <motion.div
-                key={category.title}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4, delay: catIndex * 0.1 }}
-                className={`${category.bg} border ${category.border} rounded-2xl p-6`}
-              >
-                {/* Category header */}
-                <div className="flex items-center gap-3 mb-5">
-                  <div className={`w-9 h-9 bg-gradient-to-br ${category.color} rounded-xl flex items-center justify-center`}>
-                    <category.icon className="w-5 h-5 text-white" />
-                  </div>
-                  <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-                    {category.title}
-                  </h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          {skillCategories.map((category, index) => (
+            <motion.div
+              key={category.title}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: index * 0.1 }}
+              className="bg-[#111827] rounded-2xl p-6 border border-gray-800 hover:border-gray-600 transition-all"
+            >
+              <div className="flex items-center mb-6 gap-3">
+                <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center">
+                  <category.icon className="w-5 h-5 text-white" />
                 </div>
-
-                {/* Skills grid */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {category.skills.map((skill, skillIndex) => (
-                    <div key={skill.name} className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-100 dark:border-gray-700">
-                      {/* Skill name + badge */}
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-sm font-semibold text-gray-800 dark:text-white">
-                          {skill.name}
-                        </span>
-                        <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${getLevelColor(skill.level)}`}>
-                          {getLevelLabel(skill.level)}
-                        </span>
-                      </div>
-
-                      {/* Progress bar */}
-                      <div className="h-1.5 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden mb-2">
-                        <motion.div
-                          initial={{ width: 0 }}
-                          whileInView={{ width: `${skill.level}%` }}
-                          viewport={{ once: true }}
-                          transition={{ duration: 0.9, delay: skillIndex * 0.08 }}
-                          className={`h-full bg-gradient-to-r ${category.color} rounded-full`}
-                        />
-                      </div>
-
-                      {/* Percentage + note */}
-                      <div className="flex items-center justify-between">
-                        <p className="text-[11px] text-gray-400 dark:text-gray-500 leading-tight">
-                          {skill.note}
-                        </p>
-                        <span className="text-xs font-bold text-gray-500 dark:text-gray-400 ml-2 flex-shrink-0">
-                          {skill.level}%
-                        </span>
-                      </div>
+                <h3 className="text-lg font-bold text-white">{category.title}</h3>
+              </div>
+              <div className="space-y-4">
+                {category.skills.map((skill, skillIndex) => (
+                  <div key={skill.name}>
+                    <div className="flex justify-between mb-1">
+                      <span className="text-sm text-gray-300">{skill.name}</span>
+                      <span className="text-sm font-bold text-cyan-400">{skill.level}%</span>
                     </div>
-                  ))}
-                </div>
-              </motion.div>
-            ))}
-          </div>
-
-          {/* Tools section */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, delay: 0.5 }}
-            className="mt-8 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-2xl p-6"
-          >
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-              Tools & Technologies
-            </h2>
-            <div className="flex flex-wrap gap-2">
-              {[
-                'Terraform', 'Docker', 'Kubernetes', 'Jenkins', 'ArgoCD',
-                'Prometheus', 'Grafana', 'AWS EKS', 'SonarQube', 'Trivy',
-                'Helm', 'Git', 'Linux', 'Python', 'Bash', 'CloudWatch',
-                'SNS', 'S3', 'DynamoDB', 'Lambda', 'EventBridge', 'Athena',
-                'MongoDB', 'Pandas', 'XGBoost', 'Jupyter', 'Nodemon'
-              ].map((tool) => (
-                <span
-                  key={tool}
-                  className="px-3 py-1.5 text-xs font-medium bg-gray-50 dark:bg-gray-700 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-600 rounded-lg hover:border-blue-300 dark:hover:border-blue-600 transition-colors"
-                >
-                  {tool}
-                </span>
-              ))}
-            </div>
-          </motion.div>
-
+                    <div className="h-2 bg-gray-800 rounded-full overflow-hidden">
+                      <motion.div
+                        initial={{ width: 0 }}
+                        animate={{ width: `${skill.level}%` }}
+                        transition={{ duration: 1, delay: skillIndex * 0.1, ease: 'easeOut' }}
+                        className={`h-full bg-gradient-to-r ${skill.color} rounded-full`}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+          ))}
         </div>
       </div>
-    </>
+    </div>
   )
 }

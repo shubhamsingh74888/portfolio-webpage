@@ -1,203 +1,220 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { motion } from 'framer-motion'
 import { Link } from 'react-router-dom'
 import {
-  ServerIcon,
-  CodeBracketIcon,
   ArrowTopRightOnSquareIcon,
-  XMarkIcon,
-  CheckCircleIcon
+  CodeBracketIcon,
+  ServerIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon
 } from '@heroicons/react/24/outline'
-import ProjectCard, { ProjectModal } from './ProjectCard'
 
 const featuredProjects = [
   {
     id: 1,
-    title: 'wanderlust-infra — AWS Infrastructure',
-    description: '41 AWS resources via modular Terraform with S3/DynamoDB remote state locking and CloudWatch alarms.',
-    detailedDescription: 'Provisioned 41 AWS resources via modular Terraform with S3/DynamoDB remote state locking. Diagnosed Terraform destroy failures from orphaned ALBs and built automated cleanup in Jenkins Shared Library. Configured CloudWatch alarms routed to SNS for sub-60-second incident detection.',
-    technologies: [
-      { name: 'Terraform' }, { name: 'AWS' }, { name: 'CloudWatch' }, { name: 'Jenkins' }, { name: 'EKS' }
-    ],
-    tools: ['Jenkins Shared Library', 'SNS', 'S3', 'DynamoDB'],
-    features: [
-      'Modular IaC with remote state locking',
-      'Automated cleanup of orphaned ALBs',
-      'Sub-60s incident detection via CloudWatch + SNS',
-      'Runbook documentation'
-    ],
-    category: 'Cloud',
-    image: 'https://images.unsplash.com/photo-1558494949-ef010cbdcc31?auto=format&fit=crop&w=800',
-    repository: 'https://github.com/shubhamsingh74888/wanderlust-infra',
-    status: 'completed',
-    metrics: { resources: '41 AWS', alertTime: '< 60s', stateBackend: 'S3+DynamoDB' }
+    title: 'Wanderlust DevSecOps Pipeline',
+    description: '10-stage Jenkins CI/CD pipeline with SonarQube SAST, OWASP, Trivy scans, Docker Hub push, and ArgoCD GitOps delivery on AWS EKS.',
+    technologies: ['Jenkins', 'SonarQube', 'Trivy', 'OWASP', 'Docker', 'ArgoCD'],
+    category: 'DevSecOps',
+    image: '/thumbnails/pipeline1.png',
+    fallback: 'https://images.unsplash.com/photo-1558494949-ef010cbdcc31?auto=format&fit=crop&w=800',
+    githubUrl: 'https://github.com/shubhamsingh74888/Wanderlust-Mega-Project',
+    metrics: { Stages: '10', Security: 'SAST+SCA', Deploy: 'GitOps' }
   },
   {
     id: 2,
-    title: 'Wanderlust-Mega-Project — CI/CD & GitOps',
-    description: 'Full CI/CD pipeline with ArgoCD GitOps, SonarQube quality gates, Trivy scanning, and Prometheus monitoring.',
-    detailedDescription: 'Diagnosed a CI/CD race condition between GitOps push and ArgoCD sync by refactoring pipelines. Troubleshot ArgoCD OutOfSync failures from immutable StorageClass fields. Integrated SNS alerts into Jenkins post-build hooks and operated SonarQube quality gates and Trivy scanning.',
-    technologies: [
-      { name: 'Kubernetes' }, { name: 'ArgoCD' }, { name: 'Jenkins' }, { name: 'Docker' }, { name: 'Prometheus' }
-    ],
-    tools: ['Helm', 'SonarQube', 'Trivy', 'Grafana', 'Loki'],
-    features: [
-      'GitOps with ArgoCD sync policies',
-      'SAST via SonarQube quality gates',
-      'Container scanning with Trivy',
-      'Prometheus + Grafana monitoring stack'
-    ],
-    category: 'CI/CD',
-    image: 'https://images.unsplash.com/photo-1563013544-824ae1b704d3?auto=format&fit=crop&w=800',
-    status: 'completed',
-    metrics: { pipeline: 'GitOps', scanning: 'SAST+Container', monitoring: 'Prometheus' }
+    title: 'Wanderlust EKS Infrastructure',
+    description: 'Modular Terraform AWS EKS cluster with Packer AMI, Jenkins CI server, Prometheus/Grafana monitoring, ArgoCD, and Helm-based delivery.',
+    technologies: ['Terraform', 'AWS EKS', 'Helm', 'Prometheus', 'Grafana', 'ArgoCD'],
+    category: 'Infrastructure',
+    image: '/thumbnails/pipeline2.png',
+    fallback: 'https://images.unsplash.com/photo-1560732488-6b0df240254a?auto=format&fit=crop&w=800',
+    githubUrl: 'https://github.com/shubhamsingh74888/wanderlust-infra',
+    metrics: { Resources: '41', Modules: '3', Region: 'ap-south-1' }
   },
   {
     id: 3,
-    title: 'Battery RUL Prediction — ML Pipeline',
-    description: 'End-to-end ML pipeline on NASA PCoE dataset predicting battery remaining useful life, reducing manual effort by 40%.',
-    detailedDescription: 'Built Battery RUL prediction pipeline on NASA dataset during CSIR-IIP internship. Evaluated 4 ML models via leave-one-battery-out CV. Automated ETL pipelines using Python and Bash, reducing manual data handling effort by 40%.',
-    technologies: [
-      { name: 'Python' }, { name: 'XGBoost' }, { name: 'Pandas' }, { name: 'scikit-learn' }
-    ],
-    tools: ['Bash', 'Git', 'Jupyter', 'NumPy', 'Matplotlib'],
-    features: [
-      'Leave-one-battery-out cross-validation',
-      '4 ML models evaluated and compared',
-      'Automated ETL with Python + Bash',
-      '40% reduction in manual data handling'
-    ],
-    category: 'Automation',
-    image: 'https://images.unsplash.com/photo-1560732488-6b0df240254a?auto=format&fit=crop&w=800',
-    repository: 'https://github.com/shubhamsingh74888/battery_RUL_prediction',
-    status: 'completed',
-    metrics: { effortReduction: '40%', models: '4 ML models', dataset: 'NASA PCoE' }
+    title: 'Stock Price Serverless Pipeline',
+    description: 'Event-driven AWS pipeline — S3 upload triggers Lambda which parses stock CSVs and stores to DynamoDB. Fully managed with Terraform.',
+    technologies: ['AWS Lambda', 'S3', 'DynamoDB', 'Terraform', 'Python', 'CloudWatch'],
+    category: 'Serverless',
+    image: 'https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?auto=format&fit=crop&w=800',
+    githubUrl: '#',
+    metrics: { Trigger: 'S3', Runtime: 'Python', Storage: 'DynamoDB' }
+  },
+  {
+    id: 4,
+    title: 'Battery RUL Prediction',
+    description: 'ML pipeline predicting battery remaining useful life using Linear Regression, Random Forest, and XGBoost with Flask API and dashboard.',
+    technologies: ['Python', 'XGBoost', 'Flask', 'Pandas', 'Scikit-learn', 'CSIR-IIP'],
+    category: 'ML / AI',
+    image: 'https://images.unsplash.com/photo-1620288627223-53302f4e8c74?auto=format&fit=crop&w=800',
+    githubUrl: '#',
+    metrics: { Models: '3', Accuracy: '~94%', API: 'Flask' }
   }
 ]
 
-function FeaturedCard({ project, index }) {
-  const [showModal, setShowModal] = useState(false)
-
-  return (
-    <>
-      <motion.div
-        initial={{ opacity: 0, y: 16 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true }}
-        transition={{ duration: 0.4, delay: index * 0.1 }}
-        onClick={() => setShowModal(true)}
-        className="group bg-white dark:bg-gray-800 rounded-xl overflow-hidden border border-gray-100 dark:border-gray-700 hover:border-blue-200 dark:hover:border-blue-700 hover:shadow-lg transition-all duration-300 cursor-pointer transform hover:-translate-y-1"
-      >
-        {/* Image */}
-        <div className="relative h-36 overflow-hidden">
-          <img
-            src={project.image}
-            alt={project.title}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-          <span className="absolute top-2.5 right-2.5 px-2 py-0.5 bg-blue-600 text-white text-[10px] font-semibold rounded-full">
-            {project.category}
-          </span>
-          <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-            <span className="px-3 py-1 bg-white/90 text-gray-900 text-xs font-semibold rounded-full">
-              Click for details
-            </span>
-          </div>
-        </div>
-
-        {/* Body */}
-        <div className="p-4">
-          <h3 className="text-sm font-bold text-gray-900 dark:text-white mb-1.5 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors line-clamp-2">
-            {project.title}
-          </h3>
-          <p className="text-xs text-gray-500 dark:text-gray-400 mb-3 line-clamp-2 leading-relaxed">
-            {project.description}
-          </p>
-
-          {/* Tech tags */}
-          <div className="flex flex-wrap gap-1 mb-3">
-            {project.technologies.slice(0, 3).map((tech) => (
-              <span
-                key={tech.name}
-                className="px-2 py-0.5 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 text-[10px] rounded-md"
-              >
-                {tech.name}
-              </span>
-            ))}
-            {project.technologies.length > 3 && (
-              <span className="px-2 py-0.5 bg-gray-100 dark:bg-gray-700 text-gray-500 text-[10px] rounded-md">
-                +{project.technologies.length - 3}
-              </span>
-            )}
-          </div>
-
-          {/* Metrics row */}
-          <div className="grid grid-cols-3 gap-1.5 mb-3">
-            {Object.entries(project.metrics).map(([key, val]) => (
-              <div key={key} className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-1.5 text-center">
-                <p className="text-[10px] font-bold text-blue-600 dark:text-blue-400 truncate">{val}</p>
-                <p className="text-[9px] text-gray-400 capitalize truncate">{key.replace(/([A-Z])/g, ' $1')}</p>
-              </div>
-            ))}
-          </div>
-
-          <div className="flex items-center justify-between pt-2.5 border-t border-gray-100 dark:border-gray-700">
-            <div className="flex items-center gap-1 text-[10px] text-green-500">
-              <CheckCircleIcon className="w-3 h-3" />
-              <span>Completed</span>
-            </div>
-            <span className="text-[10px] text-blue-500 font-medium group-hover:underline">
-              View details →
-            </span>
-          </div>
-        </div>
-      </motion.div>
-
-      {showModal && (
-        <ProjectModal project={project} onClose={() => setShowModal(false)} />
-      )}
-    </>
-  )
-}
-
-// Re-export ProjectModal so FeaturedProjects can use it
-// We import it inline above — this is a named export from ProjectCard
-// Actually let's define it here directly to avoid circular imports:
-
 export default function FeaturedProjects() {
-  return (
-    <section className="py-12 px-4 bg-gray-50 dark:bg-gray-800/30">
-      <div className="max-w-7xl mx-auto">
+  const [current, setCurrent] = useState(0)
+  const [imgErrors, setImgErrors] = useState({})
+  const total = featuredProjects.length
 
-        {/* Header */}
-        <div className="text-center mb-8">
-          <h2 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white mb-2">
+  const prev = () => setCurrent(c => (c - 1 + total) % total)
+  const next = () => setCurrent(c => (c + 1) % total)
+
+  const visible = [
+    featuredProjects[(current - 1 + total) % total],
+    featuredProjects[current],
+    featuredProjects[(current + 1) % total],
+  ]
+
+  return (
+    <div className="bg-gray-50 dark:bg-gray-900 py-16 px-6">
+      <div className="max-w-6xl mx-auto">
+
+        <div className="text-center mb-10">
+          <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-3">
             Featured Projects
           </h2>
-          <p className="text-sm text-gray-500 dark:text-gray-400">
-            Real DevOps implementations — click any card to explore
+          <p className="text-gray-500 dark:text-gray-400">
+            Real-world DevOps implementations with measurable results
           </p>
         </div>
 
-        {/* Cards grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-          {featuredProjects.map((project, index) => (
-            <FeaturedCard key={project.id} project={project} index={index} />
+        <div className="relative px-6">
+
+          <button
+            onClick={prev}
+            className="absolute left-0 top-1/2 -translate-y-1/2 z-20 w-10 h-10 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-full shadow-lg flex items-center justify-center hover:bg-blue-50 dark:hover:bg-gray-700 transition-colors"
+          >
+            <ChevronLeftIcon className="w-5 h-5 text-gray-700 dark:text-gray-300" />
+          </button>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+            {visible.map((project, i) => {
+              const isCenter = i === 1
+              const imgSrc = imgErrors[project.id] && project.fallback
+                ? project.fallback
+                : project.image
+
+              return (
+                <motion.div
+                  key={`${project.id}-${current}-${i}`}
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{
+                    opacity: 1,
+                    scale: 1,
+                  }}
+                  transition={{ duration: 0.35 }}
+                  className="group bg-white dark:bg-gray-800 rounded-2xl overflow-hidden border border-gray-200 dark:border-gray-700 shadow-lg hover:shadow-xl transition-all duration-300"
+                >
+                  <Link to={`/projects/${project.id}`} className="block relative h-52 overflow-hidden bg-gray-900">
+                    <img
+                      src={imgSrc}
+                      alt={project.title}
+                      onError={() => setImgErrors(prev => ({ ...prev, [project.id]: true }))}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 opacity-90"
+                    />
+                    <div className="absolute top-3 right-3">
+                      <span className="px-2 py-0.5 bg-blue-600 text-white text-xs font-semibold rounded-full">
+                        {project.category}
+                      </span>
+                    </div>
+                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/25 transition-colors flex items-center justify-center">
+                      <span className="opacity-0 group-hover:opacity-100 transition-opacity text-white text-xs font-medium bg-black/60 px-3 py-1 rounded-full">
+                        View Details
+                      </span>
+                    </div>
+                  </Link>
+
+                  <div className="p-4">
+                    <Link to={`/projects/${project.id}`}>
+                      <h3 className="text-sm font-bold mb-1.5 leading-snug text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                        {project.title}
+                      </h3>
+                    </Link>
+
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-3 line-clamp-2 leading-relaxed">
+                      {project.description}
+                    </p>
+
+                    <div className="flex flex-wrap gap-1.5 mb-3">
+                      {project.technologies.slice(0, 3).map(t => (
+                        <span key={t} className="px-2 py-0.5 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 text-[10px] rounded-full">
+                          {t}
+                        </span>
+                      ))}
+                      {project.technologies.length > 3 && (
+                        <span className="px-2 py-0.5 bg-gray-100 dark:bg-gray-700 text-gray-400 text-[10px] rounded-full">
+                          +{project.technologies.length - 3}
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-1 mb-3 py-2 border-y border-gray-100 dark:border-gray-700">
+                      {Object.entries(project.metrics).map(([k, v]) => (
+                        <div key={k} className="text-center">
+                          <div className="text-xs font-bold text-blue-600 dark:text-blue-400">{v}</div>
+                          <div className="text-[9px] text-gray-400">{k}</div>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="flex justify-between items-center">
+                      <a
+                        target="_blank"
+                        rel="noreferrer"
+                        className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                      >
+                        <CodeBracketIcon className="w-3.5 h-3.5" />
+                        GitHub
+                      </a>
+                      <Link
+                        to={`/projects/${project.id}`}
+                        className="flex items-center gap-1 text-xs text-blue-600 dark:text-blue-400 hover:text-blue-700 font-medium transition-colors"
+                      >
+                        Details
+                        <ArrowTopRightOnSquareIcon className="w-3 h-3" />
+                      </Link>
+                    </div>
+                  </div>
+                </motion.div>
+              )
+            })}
+          </div>
+
+          <button
+            onClick={next}
+            className="absolute right-0 top-1/2 -translate-y-1/2 z-20 w-10 h-10 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-full shadow-lg flex items-center justify-center hover:bg-blue-50 dark:hover:bg-gray-700 transition-colors"
+          >
+            <ChevronRightIcon className="w-5 h-5 text-gray-700 dark:text-gray-300" />
+          </button>
+        </div>
+
+        <div className="flex justify-center gap-2 mt-6">
+          {featuredProjects.map((_, i) => (
+            <button
+              key={i}
+              onClick={() => setCurrent(i)}
+              className={`rounded-full transition-all duration-300 ${
+                i === current
+                  ? 'w-6 h-2 bg-blue-600'
+                  : 'w-2 h-2 bg-gray-300 dark:bg-gray-600 hover:bg-gray-400'
+              }`}
+            />
           ))}
         </div>
 
-        {/* View all */}
         <div className="text-center mt-8">
           <Link
             to="/projects"
-            className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-white bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 rounded-full shadow transition-all"
+            className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium rounded-full text-white bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 shadow-lg hover:shadow-xl transition-all"
           >
             View All Projects
             <ServerIcon className="w-4 h-4" />
           </Link>
         </div>
       </div>
-    </section>
+    </div>
   )
 }
