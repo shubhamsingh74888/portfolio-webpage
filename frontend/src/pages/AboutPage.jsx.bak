@@ -115,7 +115,6 @@ export default function AboutPage() {
               <div className="flex flex-wrap justify-center md:justify-start gap-3">
 
                 
-                <a
                   href="/resume.pdf"
                   download
                   className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-blue-500 to-indigo-600 rounded-xl hover:from-blue-600 hover:to-indigo-700 transition-all shadow"
@@ -124,7 +123,6 @@ export default function AboutPage() {
                 </a>
 
                 
-                <a
                   href="https://github.com/shubhamsingh74888"
                   target="_blank"
                   rel="noreferrer"
@@ -136,7 +134,6 @@ export default function AboutPage() {
                 </a>
 
                 
-                <a
                   href="https://www.linkedin.com/in/shubham-singh-aa858b35a"
                   target="_blank"
                   rel="noreferrer"
@@ -266,45 +263,3 @@ export default function AboutPage() {
                 <div>
                   <p className="text-sm
 
- font-semibold text-gray-900 dark:text-white">
-                    AWS Cloud Practitioner (CLF-C02)
-                  </p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                    Amazon Web Services · In Progress
-                  </p>
-                  <span className="inline-block mt-1.5 text-[10px] font-medium px-2 py-0.5 bg-amber-50 text-amber-600 dark:bg-amber-900/20 dark:text-amber-400 rounded-full">
-                    Expected July 2026
-                  </span>
-                </div>
-              </div>
-            </div>
-          </motion.div>
-
-          {/* Quick stats */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, delay: 0.35 }}
-            className="grid grid-cols-2 sm:grid-cols-4 gap-3"
-          >
-            {[
-              { value: '4+', label: 'Projects Built', color: 'text-blue-600 dark:text-blue-400' },
-              { value: '40%', label: 'Effort Reduced', color: 'text-green-600 dark:text-green-400' },
-              { value: '41', label: 'AWS Resources', color: 'text-orange-500 dark:text-orange-400' },
-              { value: '2026', label: 'MCA Grad Year', color: 'text-purple-600 dark:text-purple-400' },
-            ].map((stat) => (
-              <div
-                key={stat.label}
-                className="bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-xl p-4 text-center"
-              >
-                <p className={`text-2xl font-bold ${stat.color}`}>{stat.value}</p>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{stat.label}</p>
-              </div>
-            ))}
-          </motion.div>
-
-        </div>
-      </div>
-    </>
-  )
-}
