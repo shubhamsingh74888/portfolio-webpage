@@ -1,12 +1,9 @@
-// frontend/src/api.js
 import axios from 'axios';
 
-// This will be:
-// → http://localhost:5000/api   in development
-// → https://api.yourname.com    or /api in production
-const API_BASE_URL = import.meta.env.VITE_API_URL?.trim() || 'http://localhost:5000/api';
+// /api works in production (Nginx proxies it to backend)
+// http://localhost:5000/api works in local dev
+const API_BASE_URL = import.meta.env.VITE_API_URL?.trim() || '/api';
 
-// Normalize: ensure it ends with exactly one "/"
 const baseURL = API_BASE_URL.endsWith('/') ? API_BASE_URL : `${API_BASE_URL}/`;
 
 const api = axios.create({

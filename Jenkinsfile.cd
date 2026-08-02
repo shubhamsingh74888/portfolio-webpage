@@ -1,0 +1,90 @@
+// ─────────────────────────────────────────────────────────────────────────────
+// Portfolio Website — CD Pipeline
+// Triggered after CI completes successfully (via Jenkins downstream trigger
+// or GitHub Actions webhook)
+//
+// Stages: Smoke Test → Rollback on failure → Notify
+//
+// NOTE: ArgoCD owns the actual deploy. By the time CD runs,
+//       ArgoCD has already synced the new image to EKS.
+//       CD only verifies the deploy is healthy.
+// ─────────────────────────────────────────────────────────────────────────────
+
+@Library('portfolio-shared-lib') _
+
+pipeline {
+
+    agent any
+
+    environment {
+        PROJECT    = "portfolio"
+        AWS_REGION = "ap-south-1"
+        GITOPS_REPO = "shubhamsingh74888/portfolio-gitops"
+
+        // Your portfolio app's public URL (ALB or NodePort)
+        // Set this as a Jenkins credential or environment variable
+        APP_URL    = credentials('portfolio-app-url')
+    }
+
+    parameters {
+        string(
+            name:         'BUILD_TAG',
+            defaultValue: '',
+            description:  'Build number from CI pipeline (auto-filled when triggered downstream)'
+        )
+    }
+
+    options {
+        timeout(time: 15, unit: 'MINUTES')
+        disableConcurrentBuilds()
+    }
+
+    stages {
+
+        // ── Stage 1: Smoke Test ───────────────────────────────────────────
+        // Wait for ArgoCD to finish syncing then hit the live URL
+        stage('Smoke Test') {
+            steps {
+                // Give ArgoCD 30s to start syncing before we check
+                sleep(time: 30, unit: 'SECONDS')
+
+                smokeTest(
+                    url:         env.APP_URL,
+                    retries:     5,
+                    waitSeconds: 15
+                )
+            }
+        }
+    }
+
+    post {
+        success {
+            notifySlackSNS(
+                status:      'SUCCESS',
+                project:     env.PROJECT,
+                buildNumber: params.BUILD_TAG.toInteger(),
+                buildUrl:    env.BUILD_URL,
+                region:      env.AWS_REGION
+            )
+        }
+        failure {
+            // Smoke test failed → revert GitOps repo → ArgoCD re-deploys previous image
+            rollback(
+                gitOpsRepo: env.GITOPS_REPO,
+                project:    env.PROJECT
+            )
+            notifySlackSNS(
+                status:      'FAILURE',
+                project:     env.PROJECT,
+                buildNumber: params.BUILD_TAG.toInteger(),
+                buildUrl:    env.BUILD_URL,
+                region:      env.AWS_REGION,
+                stageName:   'Smoke Test + Rollback triggered'
+            )
+        }
+        always {
+            cleanWs()
+        }
+    }
+}
+

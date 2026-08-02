@@ -1,0 +1,145 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: portfolio-backend
+  namespace: portfolio
+  labels:
+    app: portfolio-backend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: portfolio-backend
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        app: portfolio-backend
+    spec:
+      containers:
+        - name: backend
+          image: shubham74888/portfolio-backend:v1
+          imagePullPolicy: IfNotPresent                 # Use local image (no registry)
+          ports:
+            - containerPort: 5000
+          env:
+            # From Secret
+            - name: MONGO_ROOT_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: portfolio-secret
+                  key: MONGO_ROOT_USERNAME
+            - name: MONGO_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: portfolio-secret
+                  key: MONGO_ROOT_PASSWORD
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: portfolio-secret
+                  key: JWT_SECRET
+            - name: SMTP_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: portfolio-secret
+                  key: SMTP_PASS
+            # From ConfigMap
+            - name: NODE_ENV
+              valueFrom:
+                configMapKeyRef:
+                  name: portfolio-config
+                  key: NODE_ENV
+            - name: PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: portfolio-config
+                  key: PORT
+            - name: FRONTEND_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: portfolio-config
+                  key: FRONTEND_URL
+            - name: SMTP_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: portfolio-config
+                  key: SMTP_HOST
+            - name: SMTP_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: portfolio-config
+                  key: SMTP_PORT
+            - name: SMTP_SECURE
+              valueFrom:
+                configMapKeyRef:
+                  name: portfolio-config
+                  key: SMTP_SECURE
+            - name: SMTP_FROM
+              valueFrom:
+                configMapKeyRef:
+                  name: portfolio-config
+                  key: SMTP_FROM
+            - name: SMTP_USER
+              valueFrom:
+                configMapKeyRef:
+                  name: portfolio-config
+                  key: SMTP_USER
+            - name: CONTACT_RECEIVER_EMAIL
+              valueFrom:
+                configMapKeyRef:
+                  name: portfolio-config
+                  key: CONTACT_RECEIVER_EMAIL
+            # MongoDB URI assembled from secret values
+            - name: MONGODB_URI
+              value: "mongodb://$(MONGO_ROOT_USERNAME):$(MONGO_ROOT_PASSWORD)@mongodb.portfolio.svc.cluster.local:27017/portfolio?authSource=admin"
+          volumeMounts:
+            - name: uploads
+              mountPath: /app/uploads
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "256Mi"
+              cpu: "300m"
+          livenessProbe:
+            httpGet:
+              path: /api/health
+              port: 5000
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            timeoutSeconds: 10
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /api/health
+              port: 5000
+            initialDelaySeconds: 20
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+      volumes:
+        - name: uploads
+          persistentVolumeClaim:
+            claimName: uploads-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: portfolio-backend
+  namespace: portfolio
+  labels:
+    app: portfolio-backend
+spec:
+  selector:
+    app: portfolio-backend
+  ports:
+    - port: 5000
+      targetPort: 5000
+  type: ClusterIP      # Only reachable inside cluster — Ingress handles external
+

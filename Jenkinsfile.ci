@@ -1,0 +1,128 @@
+// ─────────────────────────────────────────────────────────────────────────────
+// Portfolio Website — CI Pipeline
+// Uses existing Shared Library: github.com/shubhamsingh74888/Shared-library
+//
+// Stages:
+//   Checkout → OWASP → Build → Trivy Scan → ECR Push → GitOps Update → Notify
+// ─────────────────────────────────────────────────────────────────────────────
+
+@Library('portfolio-shared-lib') _
+
+pipeline {
+
+    agent any
+
+    environment {
+        // ECR registry root
+        REGISTRY   = "439328746071.dkr.ecr.ap-south-1.amazonaws.com"
+        PROJECT    = "portfolio"
+        AWS_REGION = "ap-south-1"
+
+        // GitOps repo (separate from app code repo)
+        GITOPS_REPO = "shubhamsingh74888/portfolio-gitops"
+    }
+
+    options {
+        timeout(time: 30, unit: 'MINUTES')
+        disableConcurrentBuilds()
+        buildDiscarder(logRotator(numToKeepStr: '10'))
+    }
+
+    stages {
+
+        // ── Stage 1: Checkout ─────────────────────────────────────────────
+        stage('Checkout') {
+            steps {
+                checkout scm
+                echo "Branch: ${env.BRANCH_NAME} | Build: #${env.BUILD_NUMBER}"
+            }
+        }
+
+        // ── Stage 2: OWASP Dependency Check ───────────────────────────────
+        stage('OWASP Dependency Check') {
+            steps {
+                owaspScan(
+                    project: env.PROJECT
+                )
+            }
+        }
+
+        // ── Stage 3: Docker Build ──────────────────────────────────────────
+        stage('Build Images') {
+            steps {
+                buildImages(
+                    registry:    env.REGISTRY,
+                    project:     env.PROJECT,
+                    buildNumber: env.BUILD_NUMBER.toInteger()
+                )
+            }
+        }
+
+        // ── Stage 4: Trivy Image Scan ──────────────────────────────────────
+        stage('Trivy Scan') {
+            steps {
+                scanImages(
+                    registry:    env.REGISTRY,
+                    project:     env.PROJECT,
+                    buildNumber: env.BUILD_NUMBER.toInteger()
+                )
+            }
+        }
+
+        // ── Stage 5: ECR Push ──────────────────────────────────────────────
+        stage('ECR Push') {
+            steps {
+                pushToECR(
+                    registry:    env.REGISTRY,
+                    project:     env.PROJECT,
+                    region:      env.AWS_REGION,
+                    buildNumber: env.BUILD_NUMBER.toInteger()
+                )
+            }
+        }
+
+        // ── Stage 6: GitOps Update ─────────────────────────────────────────
+        // CI's ONLY job: update image tag in portfolio-gitops repo.
+        // ArgoCD handles the actual deploy — never kubectl apply here.
+        stage('GitOps Update') {
+            steps {
+                updateGitops(
+                    registry:     env.REGISTRY,
+                    project:      env.PROJECT,
+                    gitOpsRepo:   env.GITOPS_REPO,
+                    buildNumber:  env.BUILD_NUMBER.toInteger(),
+                    frontendPath: 'frontend/deployment.yaml',
+                    backendPath:  'backend/deployment.yaml'
+                )
+            }
+        }
+    }
+
+    post {
+        success {
+            notifySlackSNS(
+                status:      'SUCCESS',
+                project:     env.PROJECT,
+                buildNumber: env.BUILD_NUMBER.toInteger(),
+                buildUrl:    env.BUILD_URL,
+                region:      env.AWS_REGION
+            )
+            // Clean up local Docker images — avoids disk pressure on EC2
+            sh 'docker rmi $(docker images -q --filter "reference=*portfolio*") 2>/dev/null || true'
+        }
+        failure {
+            notifySlackSNS(
+                status:      'FAILURE',
+                project:     env.PROJECT,
+                buildNumber: env.BUILD_NUMBER.toInteger(),
+                buildUrl:    env.BUILD_URL,
+                region:      env.AWS_REGION,
+                stageName:   env.STAGE_NAME
+            )
+        }
+        always {
+            cleanWs()
+        }
+    }
+}
+

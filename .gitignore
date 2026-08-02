@@ -10,10 +10,19 @@ frontend/dist/
 backend/dist/
 dist/
 
-# Environment
+# Environment - NEVER commit these
 .env
 .env.local
 .env.production
+.env.save
+*.env
+
+# Terraform - NEVER commit these
+**/.terraform/
+*.tfstate
+*.tfstate.backup
+*.tfvars
+.terraform.lock.hcl
 
 # OS
 .DS_Store
@@ -27,7 +36,4 @@ Thumbs.db
 
 # Logs
 logs/
-*.log.env.development
-.env.production
-.env.local
-.env
+*.log

@@ -14,12 +14,13 @@ const contactSchema = new mongoose.Schema({
   },
   phone: {
     type: String,
-    required: true
+    required: false,
+    default: ''
   },
   purpose: {
     type: String,
     enum: ['project', 'consultation', 'freelance', 'collaboration', 'other'],
-    default: 'project'
+    default: 'other'
   },
   company: String,
   projectType: String,
@@ -54,7 +55,6 @@ const contactSchema = new mongoose.Schema({
   timestamps: true
 });
 
-// Index for quick queries
 contactSchema.index({ status: 1, createdAt: -1 });
 contactSchema.index({ email: 1 });
 

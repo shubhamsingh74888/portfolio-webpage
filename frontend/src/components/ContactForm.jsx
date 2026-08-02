@@ -1,215 +1,124 @@
-import { useState } from 'react'
-import toast from 'react-hot-toast'
-import { contactService } from '../services/contact.service'
+import { useState } from "react"
+import { motion } from "framer-motion"
+import { FaGithub, FaLinkedin, FaTwitter, FaEnvelope, FaCheckCircle, FaExclamationCircle } from "react-icons/fa"
+
+const SOCIAL_LINKS = [
+  { name: "GitHub",   icon: FaGithub,   href: "https://github.com/shubhamsingh74888",       cls: "hover:text-white hover:bg-gray-700" },
+  { name: "LinkedIn", icon: FaLinkedin,  href: "https://linkedin.com/in/YOUR_LINKEDIN",      cls: "hover:text-blue-400 hover:bg-blue-950" },
+  { name: "Twitter",  icon: FaTwitter,   href: "https://twitter.com/YOUR_TWITTER",           cls: "hover:text-sky-400 hover:bg-sky-950" },
+  { name: "Email",    icon: FaEnvelope,  href: "mailto:shubhamsingh74888@gmail.com",         cls: "hover:text-green-400 hover:bg-green-950" }
+]
 
 export default function ContactForm() {
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    phone: '',
-    purpose: 'consultation',
-    company: '',
-    projectType: '',
-    budget: '',
-    timeline: '',
-    message: ''
-  })
-  const [submitting, setSubmitting] = useState(false)
+  const [form, setForm]       = useState({ name: "", email: "", message: "" })
+  const [status, setStatus]   = useState(null)
+  const [loading, setLoading] = useState(false)
+  const [errors, setErrors]   = useState({})
 
-  const handleSubmit = async (e) => {
-    e.preventDefault()
-    setSubmitting(true)
+  const validate = () => {
+    const e = {}
+    if (!form.name.trim())    e.name    = "Name is required"
+    if (!form.email.trim())   e.email   = "Email is required"
+    else if (!/^\S+@\S+\.\S+$/.test(form.email)) e.email = "Enter a valid email"
+    if (!form.message.trim()) e.message = "Message is required"
+    return e
+  }
 
+  const handleChange = (evt) => {
+    const { name, value } = evt.target
+    setForm(prev => ({ ...prev, [name]: value }))
+    if (errors[name]) setErrors(prev => ({ ...prev, [name]: "" }))
+  }
+
+  const handleSubmit = async (evt) => {
+    evt.preventDefault()
+    const ve = validate()
+    if (Object.keys(ve).length > 0) { setErrors(ve); return }
+    setLoading(true)
+    setStatus(null)
     try {
-      const response = await contactService.submitContact(formData)
-      toast.success(response.message || 'Message sent successfully!')
-      
-      // Reset form
-      setFormData({
-        name: '',
-        email: '',
-        phone: '',
-        purpose: 'consultation',
-        company: '',
-        projectType: '',
-        budget: '',
-        timeline: '',
-        message: ''
+      const res = await fetch("/api/contact/submit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: form.name, email: form.email, message: form.message, phone: "", purpose: "other" })
       })
-    } catch (error) {
-      toast.error(error.response?.data?.message || 'Failed to send message. Please try again.')
+      if (res.ok) { setStatus("success"); setForm({ name: "", email: "", message: "" }) }
+      else         { setStatus("error") }
+    } catch (_) {
+      setStatus("error")
     } finally {
-      setSubmitting(false)
+      setLoading(false)
     }
   }
 
-  const handleChange = (e) => {
-    const { name, value } = e.target
-    setFormData(prev => ({ ...prev, [name]: value }))
-  }
+  const fieldCls = (f) =>
+    "w-full px-4 py-3 rounded-lg bg-gray-800 border text-white placeholder-gray-500 outline-none focus:ring-2 focus:ring-blue-500 transition " +
+    (errors[f] ? "border-red-500" : "border-gray-700")
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div>
-          <label htmlFor="name" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            Full Name *
-          </label>
-          <input
-            type="text"
-            id="name"
-            name="name"
-            value={formData.name}
-            onChange={handleChange}
-            required
-            className="input-field"
-            placeholder="John Doe"
-          />
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-16">
+      <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.6 }}>
+        <p className="text-gray-400 text-lg mb-10 leading-relaxed">
+          Get in touch via social media or send me a message directly.
+          I will get back to you within 24 hours.
+        </p>
+        <div className="grid grid-cols-2 gap-4">
+          {SOCIAL_LINKS.map((item) => {
+            const Icon = item.icon
+            return (
+              <a key={item.name} href={item.href}
+                target={item.name !== "Email" ? "_blank" : undefined}
+                rel="noopener noreferrer"
+                className={"flex items-center gap-3 p-4 rounded-xl border border-gray-700 text-gray-400 transition-all duration-200 " + item.cls}
+              >
+                <Icon className="text-2xl" />
+                <span className="font-medium">{item.name}</span>
+              </a>
+            )
+          })}
         </div>
+      </motion.div>
 
-        <div>
-          <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            Email Address *
-          </label>
-          <input
-            type="email"
-            id="email"
-            name="email"
-            value={formData.email}
-            onChange={handleChange}
-            required
-            className="input-field"
-            placeholder="john@example.com"
-          />
+      <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.6, delay: 0.1 }}>
+        <h2 className="text-2xl font-semibold text-white mb-6">Send me a message</h2>
+        <div className="space-y-5">
+          <div>
+            <label className="block text-sm text-gray-400 mb-1.5">Name <span className="text-red-400">*</span></label>
+            <input type="text" name="name" value={form.name} onChange={handleChange}
+              placeholder="John Doe" className={fieldCls("name")} />
+            {errors.name && <p className="text-red-400 text-xs mt-1">{errors.name}</p>}
+          </div>
+          <div>
+            <label className="block text-sm text-gray-400 mb-1.5">Email <span className="text-red-400">*</span></label>
+            <input type="email" name="email" value={form.email} onChange={handleChange}
+              placeholder="you@example.com" className={fieldCls("email")} />
+            {errors.email && <p className="text-red-400 text-xs mt-1">{errors.email}</p>}
+          </div>
+          <div>
+            <label className="block text-sm text-gray-400 mb-1.5">Message <span className="text-red-400">*</span></label>
+            <textarea name="message" value={form.message} onChange={handleChange}
+              rows={5} placeholder="Hi, I would like to discuss..."
+              className={fieldCls("message") + " resize-none"} />
+            {errors.message && <p className="text-red-400 text-xs mt-1">{errors.message}</p>}
+          </div>
+          <button onClick={handleSubmit} disabled={loading}
+            className="w-full py-3 px-6 rounded-lg font-semibold bg-blue-600 hover:bg-blue-500 text-white disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200">
+            {loading ? "Sending..." : "Send Message"}
+          </button>
+          {status === "success" && (
+            <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
+              className="flex items-center gap-2 p-4 rounded-lg bg-green-950 border border-green-700 text-green-400">
+              <FaCheckCircle /><span>Your message was sent successfully. Thanks!</span>
+            </motion.div>
+          )}
+          {status === "error" && (
+            <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
+              className="flex items-center gap-2 p-4 rounded-lg bg-red-950 border border-red-700 text-red-400">
+              <FaExclamationCircle /><span>Something went wrong. Please try again later.</span>
+            </motion.div>
+          )}
         </div>
-      </div>
-
-      <div>
-        <label htmlFor="phone" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-          Phone Number *
-        </label>
-        <input
-          type="tel"
-          id="phone"
-          name="phone"
-          value={formData.phone}
-          onChange={handleChange}
-          required
-          className="input-field"
-          placeholder="+1 (555) 123-4567"
-        />
-      </div>
-
-      <div>
-        <label htmlFor="purpose" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-          Purpose of Contact *
-        </label>
-        <select
-          id="purpose"
-          name="purpose"
-          value={formData.purpose}
-          onChange={handleChange}
-          required
-          className="input-field"
-        >
-          <option value="consultation">Consultation</option>
-          <option value="project">Project Work</option>
-          <option value="freelance">Freelance</option>
-          <option value="collaboration">Collaboration</option>
-          <option value="other">Other</option>
-        </select>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div>
-          <label htmlFor="projectType" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            Project Type
-          </label>
-          <input
-            type="text"
-            id="projectType"
-            name="projectType"
-            value={formData.projectType}
-            onChange={handleChange}
-            className="input-field"
-            placeholder="CI/CD Pipeline, Cloud Migration, etc."
-          />
-        </div>
-
-        <div>
-          <label htmlFor="budget" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            Budget Range
-          </label>
-          <select
-            id="budget"
-            name="budget"
-            value={formData.budget}
-            onChange={handleChange}
-            className="input-field"
-          >
-            <option value="">Select Budget</option>
-            <option value="< $5k">Less than $5,000</option>
-            <option value="$5k - $15k">$5,000 - $15,000</option>
-            <option value="$15k - $50k">$15,000 - $50,000</option>
-            <option value="$50k - $100k">$50,000 - $100,000</option>
-            <option value="> $100k">More than $100,000</option>
-          </select>
-        </div>
-      </div>
-
-      <div>
-        <label htmlFor="timeline" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-          Timeline
-        </label>
-        <select
-          id="timeline"
-          name="timeline"
-          value={formData.timeline}
-          onChange={handleChange}
-          className="input-field"
-        >
-          <option value="">Select Timeline</option>
-          <option value="ASAP">ASAP</option>
-          <option value="1-2 weeks">1-2 Weeks</option>
-          <option value="1 month">1 Month</option>
-          <option value="1-3 months">1-3 Months</option>
-          <option value="3+ months">3+ Months</option>
-        </select>
-      </div>
-
-      <div>
-        <label htmlFor="message" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-          Project Details *
-        </label>
-        <textarea
-          id="message"
-          name="message"
-          value={formData.message}
-          onChange={handleChange}
-          required
-          rows={5}
-          className="input-field"
-          placeholder="Tell me about your project requirements, challenges, and goals..."
-        />
-      </div>
-
-      <button
-        type="submit"
-        disabled={submitting}
-        className="btn-primary w-full"
-      >
-        {submitting ? (
-          <span className="flex items-center justify-center">
-            <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-            </svg>
-            Sending Message...
-          </span>
-        ) : (
-          'Send Message'
-        )}
-      </button>
-    </form>
+      </motion.div>
+    </div>
   )
 }
