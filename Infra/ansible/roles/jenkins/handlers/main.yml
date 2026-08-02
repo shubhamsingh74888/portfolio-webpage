@@ -1,0 +1,16 @@
+---
+- name: Restart Jenkins
+  ansible.builtin.systemd:
+    name: jenkins
+    state: restarted
+    daemon_reload: true
+
+- name: Wait for Jenkins restart
+  ansible.builtin.uri:
+    url: "http://localhost:{{ jenkins_port }}/login"
+    status_code: 200
+  register: result
+  until: result.status == 200
+  retries: 20
+  delay: 10
+  listen: Restart Jenkins

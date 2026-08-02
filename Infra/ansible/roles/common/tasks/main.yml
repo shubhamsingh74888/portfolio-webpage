@@ -1,0 +1,72 @@
+---
+- name: Install base packages
+  ansible.builtin.apt:
+    name:
+      - curl
+      - wget
+      - git
+      - unzip
+      - jq
+      - htop
+      - vim
+      - ca-certificates
+      - gnupg
+      - lsb-release
+      - python3-pip
+      - ufw
+    state: present
+    update_cache: true
+
+- name: Set timezone to Asia/Kolkata
+  community.general.timezone:
+    name: Asia/Kolkata
+
+- name: Harden sysctl — disable IP forwarding for non-container traffic
+  ansible.posix.sysctl:
+    name: "{{ item.key }}"
+    value: "{{ item.value }}"
+    state: present
+    reload: true
+  loop:
+    - { key: "net.ipv4.conf.all.accept_redirects",  value: "0" }
+    - { key: "net.ipv4.conf.all.send_redirects",    value: "0" }
+    - { key: "net.ipv4.tcp_syncookies",             value: "1" }
+    - { key: "vm.swappiness",                       value: "10" }
+
+- name: Configure UFW — allow SSH
+  community.general.ufw:
+    rule: allow
+    port: "22"
+    proto: tcp
+
+- name: Configure UFW — allow Jenkins
+  community.general.ufw:
+    rule: allow
+    port: "{{ jenkins_port }}"
+    proto: tcp
+
+- name: Enable UFW
+  community.general.ufw:
+    state: enabled
+    policy: deny
+    direction: incoming
+
+- name: Set file descriptor limits for jenkins user
+  community.general.pam_limits:
+    domain: jenkins
+    limit_type: "{{ item.type }}"
+    limit_item: nofile
+    value: "{{ item.value }}"
+  loop:
+    - { type: soft, value: "65536" }
+    - { type: hard, value: "65536" }
+
+- name: Disable unused services
+  ansible.builtin.systemd:
+    name: "{{ item }}"
+    state: stopped
+    enabled: false
+  ignore_errors: true
+  loop:
+    - snapd
+    - apport

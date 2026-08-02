@@ -1,0 +1,27 @@
+# ── Project ───────────────────────────────────────────
+project_name: portfolio
+aws_region:   ap-south-1
+aws_account:  "439328746071"
+
+# ── Jenkins ───────────────────────────────────────────
+jenkins_version:     "2.452.3"
+jenkins_port:        8080
+jenkins_home:        /var/lib/jenkins
+jenkins_user:        jenkins
+jenkins_admin_user:  admin
+
+# ── Java ──────────────────────────────────────────────
+java_version: "21"
+
+# ── Docker ────────────────────────────────────────────
+docker_users:
+  - jenkins
+  - ubuntu
+
+# ── Tool versions ─────────────────────────────────────
+kubectl_version: "v1.29.0"
+trivy_version:   "0.50.1"
+helm_version:    "v3.14.0"
+
+# ── ECR ───────────────────────────────────────────────
+ecr_registry: "{{ aws_account }}.dkr.ecr.{{ aws_region }}.amazonaws.com"

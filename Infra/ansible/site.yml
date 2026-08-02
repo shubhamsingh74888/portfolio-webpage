@@ -1,0 +1,44 @@
+---
+- name: Configure Jenkins EC2 — AI Incubator
+  hosts: jenkins
+  become: true
+  gather_facts: true
+
+  pre_tasks:
+    - name: Update apt cache
+      ansible.builtin.apt:
+        update_cache: true
+        cache_valid_time: 3600
+
+  roles:
+    - role: common      
+    - role: docker      
+    - role: tools       
+    - role: jenkins     
+
+  post_tasks:
+    - name: Print Jenkins initial admin password
+      ansible.builtin.command:
+        cmd: cat /var/lib/jenkins/secrets/initialAdminPassword
+      register: jenkins_password
+      changed_when: false
+
+    - name: Show access details
+      ansible.builtin.debug:
+        msg:
+          - "✅ Jenkins ready at http://{{ ansible_host }}:8080"
+          - "   Admin password: {{ jenkins_password.stdout }}"
+
+- name: Bootstrap Self-Managed Kubernetes Cluster
+  hosts: k8s_master, k8s_workers
+  become: true
+  gather_facts: true
+  
+  pre_tasks:
+    - name: Update apt cache
+      ansible.builtin.apt:
+        update_cache: true
+        cache_valid_time: 3600
+
+  roles:
+    - role: k8s

@@ -1,0 +1,36 @@
+# ── Trivy (fixed: no more legacy trusted.gpg keyring) ─────────────
+- name: Remove any stale Trivy apt repo file (prevents duplicate-targets warning)
+  ansible.builtin.file:
+    path: /etc/apt/sources.list.d/trivy.list
+    state: absent
+
+- name: Download Trivy GPG key (ASCII armored)
+  ansible.builtin.get_url:
+    url: https://aquasecurity.github.io/trivy-repo/deb/public.key
+    dest: /tmp/trivy.key
+    mode: "0644"
+    force: true
+
+- name: Dearmor Trivy GPG key into binary keyring
+  ansible.builtin.command: gpg --yes --dearmor -o /usr/share/keyrings/trivy-keyring.gpg /tmp/trivy.key
+  args:
+    creates: /usr/share/keyrings/trivy-keyring.gpg
+
+- name: Remove old Trivy apt_key entry if present (legacy trusted.gpg)
+  ansible.builtin.apt_key:
+    url: https://aquasecurity.github.io/trivy-repo/deb/public.key
+    state: absent
+  failed_when: false
+
+- name: Add Trivy apt repository (signed-by, no deprecation warnings)
+  ansible.builtin.apt_repository:
+    repo: "deb [signed-by=/usr/share/keyrings/trivy-keyring.gpg] https://aquasecurity.github.io/trivy-repo/deb generic main"
+    state: present
+    filename: trivy
+    update_cache: true
+
+- name: Install Trivy
+  ansible.builtin.apt:
+    name: trivy
+    state: present
+    update_cache: true

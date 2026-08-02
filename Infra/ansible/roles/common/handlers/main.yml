@@ -1,0 +1,10 @@
+---
+- name: Reload sysctl
+  ansible.builtin.command: sysctl --system
+  listen: reload sysctl
+
+- name: Restart sshd
+  ansible.builtin.service:
+    name: ssh
+    state: restarted
+  listen: restart sshd

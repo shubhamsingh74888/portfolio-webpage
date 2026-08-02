@@ -37,3 +37,27 @@ Thumbs.db
 # Logs
 logs/
 *.log
+
+# Terraform sensitive files
+Infra/terraform/.terraform/
+Infra/terraform/*.tfstate
+Infra/terraform/*.tfstate.backup
+Infra/terraform/*.tfvars
+Infra/terraform/.terraform.lock.hcl
+Infra/terraform/backend.hcl
+
+# Terraform
+Infra/terraform/.terraform/
+Infra/terraform/*.tfstate
+Infra/terraform/*.tfstate.backup
+Infra/terraform/.terraform.lock.hcl
+Infra/terraform/backend.hcl
+
+# Stray tfstate at Infra root
+Infra/terraform.tfstate
+Infra/*.tfstate
+Infra/*.tfstate.backup
+
+# Stray tfstate files
+Infra/*.tfstate
+Infra/*.tfstate.backup

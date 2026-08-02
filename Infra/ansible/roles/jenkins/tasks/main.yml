@@ -1,0 +1,132 @@
+---
+- name: Remove old broken Jenkins repository
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: absent
+  loop:
+    - /etc/apt/sources.list.d/jenkins.list
+    - /usr/share/keyrings/jenkins-keyring.gpg
+    - /usr/share/keyrings/jenkins-keyring.asc
+
+- name: Download Jenkins GPG key (ASCII armored, current 2026 signing key)
+  ansible.builtin.get_url:
+    url: https://pkg.jenkins.io/debian-stable/jenkins.io-2026.key
+    dest: /tmp/jenkins.key
+    mode: '0644'
+    force: true
+
+- name: Dearmor Jenkins GPG key into binary keyring
+  ansible.builtin.command: gpg --yes --dearmor -o /usr/share/keyrings/jenkins-keyring.gpg /tmp/jenkins.key
+  args:
+    creates: /usr/share/keyrings/jenkins-keyring.gpg
+
+- name: Remove any stale Jenkins apt repo file (prevents duplicate-targets warning)
+  ansible.builtin.file:
+    path: /etc/apt/sources.list.d/jenkins.list
+    state: absent
+
+- name: Add secure Jenkins apt repository
+  ansible.builtin.apt_repository:
+    repo: "deb [signed-by=/usr/share/keyrings/jenkins-keyring.gpg] https://pkg.jenkins.io/debian-stable binary/"
+    state: present
+    filename: jenkins
+    update_cache: false
+
+- name: Update apt cache after adding Jenkins repo
+  ansible.builtin.apt:
+    update_cache: true
+
+- name: Install Java {{ java_version }}
+  ansible.builtin.apt:
+    name: "openjdk-{{ java_version }}-jdk"
+    state: present
+    update_cache: true
+
+- name: Install Jenkins
+  ansible.builtin.apt:
+    name: jenkins
+    state: present
+    update_cache: true
+  notify: Restart Jenkins
+
+- name: Ensure Jenkins home directory exists
+  ansible.builtin.file:
+    path: "{{ jenkins_home }}"
+    state: directory
+    owner: "{{ jenkins_user }}"
+    group: "{{ jenkins_user }}"
+    mode: "0755"
+
+- name: Configure Jenkins — set port and Java options
+  ansible.builtin.lineinfile:
+    path: /etc/default/jenkins
+    regexp: "{{ item.regexp }}"
+    line: "{{ item.line }}"
+    create: true
+    mode: "0644"
+  loop:
+    - regexp: "^HTTP_PORT="
+      line:   "HTTP_PORT={{ jenkins_port }}"
+    - regexp: "^JAVA_ARGS="
+      line:   'JAVA_ARGS="-Djava.awt.headless=true -Xmx1g -Xms512m"'
+  notify: Restart Jenkins
+
+- name: Skip Jenkins setup wizard (already handled by JCasC)
+  ansible.builtin.lineinfile:
+    path: "{{ jenkins_home }}/jenkins.install.InstallUtil.lastExecVersion"
+    line: "2.452.3"
+    create: true
+    owner: "{{ jenkins_user }}"
+    group: "{{ jenkins_user }}"
+    mode: "0644"
+
+- name: Enable and start Jenkins
+  ansible.builtin.systemd:
+    name: jenkins
+    state: started
+    enabled: true
+    daemon_reload: true
+  register: jenkins_start_result
+  retries: 3
+  delay: 10
+  until: jenkins_start_result is succeeded
+
+- name: Wait for Jenkins to be fully up
+  ansible.builtin.uri:
+    url: "http://localhost:{{ jenkins_port }}/login"
+    status_code: 200
+  register: jenkins_up
+  until: jenkins_up.status == 200
+  retries: 20
+  delay: 10
+
+- name: Install Jenkins plugins
+  community.general.jenkins_plugin:
+    name: "{{ item }}"
+    state: present
+    url_username: "{{ jenkins_admin_user }}"
+    url_password: "{{ jenkins_admin_password | default(lookup('file', jenkins_home + '/secrets/initialAdminPassword')) }}"
+    url: "http://localhost:{{ jenkins_port }}"
+    timeout: 120
+  loop: "{{ lookup('file', playbook_dir + '/../jenkins/plugins.txt').splitlines() }}"
+  notify: Restart Jenkins
+
+- name: Add jenkins user to docker group
+  ansible.builtin.user:
+    name: "{{ jenkins_user }}"
+    groups: docker
+    append: true
+  notify: Restart Jenkins
+
+- name: Set Docker socket permissions
+  ansible.builtin.file:
+    path: /var/run/docker.sock
+    mode: "0666"
+
+- name: Configure AWS CLI for jenkins user
+  ansible.builtin.file:
+    path: "{{ jenkins_home }}/.aws"
+    state: directory
+    owner: "{{ jenkins_user }}"
+    group: "{{ jenkins_user }}"
+    mode: "0700"

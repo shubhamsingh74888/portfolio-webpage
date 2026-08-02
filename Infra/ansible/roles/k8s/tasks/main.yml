@@ -1,0 +1,127 @@
+---
+# ── Common Prep (Master & Worker) ───────────────────────────────────
+- name: Disable SWAP (Required by K8s)
+  ansible.builtin.command: swapoff -a
+  when: ansible_swaptotal_mb > 0
+
+- name: Remove SWAP entry from /etc/fstab
+  ansible.builtin.replace:
+    path: /etc/fstab
+    regexp: '^([^#\s]+\s+[^#\s]+\s+swap\s+.*)$'
+    replace: '# \1'
+
+- name: Load required kernel modules
+  community.general.modprobe:
+    name: "{{ item }}"
+    state: present
+  loop:
+    - overlay
+    - br_netfilter
+
+- name: Configure sysctl params for Kubernetes networking
+  ansible.posix.sysctl:
+    name: "{{ item.key }}"
+    value: "{{ item.value }}"
+    state: present
+    reload: true
+  loop:
+    - { key: "net.bridge.bridge-nf-call-iptables", value: "1" }
+    - { key: "net.bridge.bridge-nf-call-ip6tables", value: "1" }
+    - { key: "net.ipv4.ip_forward", value: "1" }
+
+- name: Install containerd container runtime
+  ansible.builtin.apt:
+    name: containerd
+    state: present
+    update_cache: true
+
+- name: Configure containerd SystemdCgroup
+  ansible.builtin.shell: |
+    mkdir -p /etc/containerd
+    containerd config default | sudo tee /etc/containerd/config.toml
+    sed -i 's/SystemdCgroup = false/SystemdCgroup = true/g' /etc/containerd/config.toml
+  args:
+    creates: /etc/containerd/config.toml
+
+- name: Restart containerd service
+  ansible.builtin.systemd:
+    name: containerd
+    state: restarted
+
+- name: Download Kubernetes GPG key
+  ansible.builtin.get_url:
+    url: https://pkgs.k8s.io/core:/stable:/v1.29/deb/Release.key
+    dest: /tmp/k8s.key
+    mode: '0644'
+
+- name: Dearmor Kubernetes GPG key
+  ansible.builtin.command: gpg --yes --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg /tmp/k8s.key
+  args:
+    creates: /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+
+- name: Add Kubernetes apt repository
+  ansible.builtin.apt_repository:
+    repo: "deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.29/deb/ /"
+    state: present
+    filename: kubernetes
+
+- name: Install kubelet, kubeadm, and kubectl
+  ansible.builtin.apt:
+    name:
+      - kubelet
+      - kubeadm
+      - kubectl
+    state: present
+    update_cache: true
+
+- name: Hold kubeadm, kubelet, and kubectl version
+  ansible.builtin.dpkg_selections:
+    name: "{{ item }}"
+    selection: hold
+  loop:
+    - kubelet
+    - kubeadm
+    - kubectl
+
+# ── Master Node Initialization ─────────────────────────────────────
+- name: Initialize Kubernetes cluster with kubeadm
+  ansible.builtin.command: >
+    kubeadm init
+    --pod-network-cidr=192.168.0.0/16
+    --ignore-preflight-errors=NumCPU
+  register: kubeadm_init
+  when: inventory_hostname in groups['k8s_master']
+  args:
+    creates: /etc/kubernetes/admin.conf
+
+- name: Setup kubeconfig for ubuntu user on Master
+  ansible.builtin.shell: |
+    mkdir -p /home/ubuntu/.kube
+    cp -i /etc/kubernetes/admin.conf /home/ubuntu/.kube/config
+    chown ubuntu:ubuntu /home/ubuntu/.kube/config
+  when: inventory_hostname in groups['k8s_master']
+
+- name: Install Calico CNI Network Plugin
+  ansible.builtin.command: >
+    kubectl apply -f https://raw.githubusercontent.com/projectcalico/calico/v3.27.0/manifests/calico.yaml
+  environment:
+    KUBECONFIG: /etc/kubernetes/admin.conf
+  when: inventory_hostname in groups['k8s_master']
+  run_once: true
+
+- name: Generate kubeadm join command
+  ansible.builtin.command: kubeadm token create --print-join-command
+  register: join_command_raw
+  when: inventory_hostname in groups['k8s_master']
+
+- name: Set join command variable across play
+  ansible.builtin.set_fact:
+    join_command: "{{ join_command_raw.stdout }}"
+  when: inventory_hostname in groups['k8s_master']
+
+# ── Worker Node Join ───────────────────────────────────────────────
+- name: Join Worker nodes to Cluster
+  ansible.builtin.command: "{{ hostvars[groups['k8s_master'][0]]['join_command'] }}"
+  when: inventory_hostname in groups['k8s_workers']
+  args:
+    creates: /etc/kubernetes/kubelet.conf
