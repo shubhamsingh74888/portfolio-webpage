@@ -1,0 +1,62 @@
+---
+# ── CLEAN OLD REPO ────────────────────────────────
+- name: Remove old Docker repo if exists
+  file:
+    path: "{{ item }}"
+    state: absent
+  loop:
+    - /etc/apt/sources.list.d/docker.list
+    - /etc/apt/sources.list.d/docker.sources
+    - /usr/share/keyrings/docker-archive-keyring.gpg
+
+# ── KEYRINGS DIR ──────────────────────────────────
+- name: Ensure keyrings directory exists
+  file:
+    path: /etc/apt/keyrings
+    state: directory
+    mode: '0755'
+
+# ── DOCKER REPO ───────────────────────────────────
+- name: Download Docker GPG key
+  get_url:
+    url: "{{ docker_gpg_url }}"
+    dest: "{{ docker_keyring_path }}"
+    mode: '0644'
+
+- name: Add Docker repository
+  apt_repository:
+    repo: "{{ docker_repo }}"
+    state: present
+    filename: docker
+
+# ── INSTALL ───────────────────────────────────────
+- name: Install Docker packages
+  apt:
+    name: "{{ docker_packages }}"
+    state: present
+    update_cache: yes
+
+# ── START SERVICE ─────────────────────────────────
+- name: Start and enable Docker service
+  systemd:
+    name: docker
+    state: started
+    enabled: yes
+
+# ── ADD USERS TO DOCKER GROUP ─────────────────────
+- name: Add users to docker group
+  user:
+    name: "{{ item }}"
+    groups: docker
+    append: yes
+  loop: "{{ docker_users }}"
+
+# ── VERIFY ────────────────────────────────────────
+- name: Verify Docker installation
+  command: docker --version
+  register: docker_version
+  changed_when: false
+
+- name: Print Docker version
+  debug:
+    msg: "Docker installed: {{ docker_version.stdout }}"

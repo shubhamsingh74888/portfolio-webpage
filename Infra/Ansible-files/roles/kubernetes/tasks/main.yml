@@ -1,0 +1,182 @@
+---
+# ── PREREQUISITES ─────────────────────────────────
+- name: Disable swap
+  command: swapoff -a
+  changed_when: false
+
+- name: Disable swap permanently
+  replace:
+    path: /etc/fstab
+    regexp: '^([^#].*?\sswap\s+sw\s+.*)$'
+    replace: '# \1'
+
+- name: Load kernel modules
+  modprobe:
+    name: "{{ item }}"
+    state: present
+  loop:
+    - overlay
+    - br_netfilter
+
+- name: Set sysctl params
+  sysctl:
+    name: "{{ item.key }}"
+    value: "{{ item.value }}"
+    state: present
+    reload: yes
+  loop:
+    - { key: 'net.bridge.bridge-nf-call-iptables',  value: '1' }
+    - { key: 'net.bridge.bridge-nf-call-ip6tables', value: '1' }
+    - { key: 'net.ipv4.ip_forward',                 value: '1' }
+
+# ── ADD DOCKER REPO FOR CONTAINERD ────────────────
+- name: Install required packages
+  apt:
+    name:
+      - apt-transport-https
+      - ca-certificates
+      - curl
+      - conntrack
+      - socat
+      - gnupg
+    state: present
+    update_cache: yes
+
+- name: Ensure keyrings directory exists
+  file:
+    path: /etc/apt/keyrings
+    state: directory
+    mode: '0755'
+
+- name: Download Docker GPG key for containerd
+  get_url:
+    url: https://download.docker.com/linux/ubuntu/gpg
+    dest: /etc/apt/keyrings/docker.asc
+    mode: '0644'
+
+- name: Add Docker repository for containerd
+  apt_repository:
+    repo: "deb [arch=amd64 signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu {{ ansible_facts['distribution_release'] }} stable"
+    state: present
+    filename: docker
+
+# ── INSTALL CONTAINERD ────────────────────────────
+- name: Install containerd
+  apt:
+    name: containerd.io
+    state: present
+    update_cache: yes
+
+- name: Configure containerd
+  shell: |
+    containerd config default | tee /etc/containerd/config.toml
+    sed -i 's/SystemdCgroup = false/SystemdCgroup = true/g' /etc/containerd/config.toml
+  changed_when: false
+
+- name: Restart containerd
+  systemd:
+    name: containerd
+    state: restarted
+    enabled: yes
+
+# ── KUBERNETES REPO ───────────────────────────────
+- name: Download Kubernetes GPG key
+  get_url:
+    url: "https://pkgs.k8s.io/core:/stable:/v1.31/deb/Release.key"
+    dest: /etc/apt/keyrings/kubernetes.asc
+    mode: '0644'
+
+- name: Add Kubernetes repository
+  apt_repository:
+    repo: "deb [signed-by=/etc/apt/keyrings/kubernetes.asc] https://pkgs.k8s.io/core:/stable:/v1.31/deb/ /"
+    state: present
+    filename: kubernetes
+
+# ── INSTALL K8S TOOLS ─────────────────────────────
+- name: Install Kubernetes tools
+  apt:
+    name:
+      - kubelet
+      - kubeadm
+      - kubectl
+    state: present
+    update_cache: yes
+
+- name: Hold Kubernetes packages
+  dpkg_selections:
+    name: "{{ item }}"
+    selection: hold
+  loop:
+    - kubelet
+    - kubeadm
+    - kubectl
+
+# ── INIT CLUSTER (MASTER ONLY) ────────────────────
+- name: Check if cluster already initialized
+  stat:
+    path: /etc/kubernetes/admin.conf
+  register: k8s_admin_conf
+
+- name: Initialize Kubernetes cluster
+  command: >
+    kubeadm init
+    --pod-network-cidr=192.168.0.0/16
+    --ignore-preflight-errors=all
+  when:
+    - not k8s_admin_conf.stat.exists
+    - inventory_hostname in groups['k8s_master']
+  register: kubeadm_output
+
+# ── SETUP KUBECONFIG (MASTER ONLY) ────────────────
+- name: Create .kube directory
+  file:
+    path: /home/ubuntu/.kube
+    state: directory
+    owner: ubuntu
+    group: ubuntu
+  when: inventory_hostname in groups['k8s_master']
+
+- name: Copy admin.conf to ubuntu user
+  copy:
+    src: /etc/kubernetes/admin.conf
+    dest: /home/ubuntu/.kube/config
+    remote_src: yes
+    owner: ubuntu
+    group: ubuntu
+    mode: '0644'
+  when: inventory_hostname in groups['k8s_master']
+
+# ── INSTALL CALICO CNI (MASTER ONLY) ──────────────
+- name: Install Calico network plugin
+  become_user: ubuntu
+  command: kubectl apply -f https://raw.githubusercontent.com/projectcalico/calico/v3.27.0/manifests/calico.yaml
+  when:
+    - inventory_hostname in groups['k8s_master']
+    - not k8s_admin_conf.stat.exists
+
+# ── JOIN WORKERS ──────────────────────────────────
+- name: Get join command from master
+  become_user: ubuntu
+  command: kubeadm token create --print-join-command
+  register: join_command
+  when: inventory_hostname in groups['k8s_master']
+  changed_when: false
+
+- name: Share join command to dummy host
+  add_host:
+    name: join_command_holder
+    join_cmd: "{{ join_command.stdout }}"
+  when: inventory_hostname in groups['k8s_master']
+  changed_when: false
+
+# ── CHECK IF WORKER ALREADY JOINED ────────────────
+- name: Check if worker already joined cluster
+  stat:
+    path: /etc/kubernetes/kubelet.conf
+  register: worker_joined
+
+- name: Join worker nodes to cluster
+  command: "{{ hostvars['join_command_holder']['join_cmd'] }} --ignore-preflight-errors=all"
+  when:
+    - inventory_hostname in groups['k8s_workers']
+    - not worker_joined.stat.exists

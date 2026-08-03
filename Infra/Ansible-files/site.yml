@@ -1,0 +1,25 @@
+---
+- name: Setup Jenkins Server
+  hosts: jenkins
+  become: yes
+  vars_files:
+    - secrets.yml
+
+  roles:
+    - jenkins
+    - docker
+    - trivy
+
+- name: Setup Kubernetes Master and Workers
+  hosts: k8s_master,k8s_workers
+  become: yes
+
+  roles:
+    - kubernetes
+
+- name: Setup ArgoCD on Master
+  hosts: k8s_master
+  become: yes
+
+  roles:
+    - argocd

@@ -1,0 +1,23 @@
+all:
+  vars:
+    ansible_user: ubuntu
+    ansible_ssh_private_key_file: ~/.ssh/instance1-key
+    ansible_ssh_common_args: '-o StrictHostKeyChecking=no'
+
+  children:
+    jenkins:
+      hosts:
+        jenkins-server:
+          ansible_host: 13.232.1.23
+
+    k8s_master:
+      hosts:
+        master-node:
+          ansible_host: 13.233.190.192
+          ansible_env:
+            KUBECONFIG: /home/ubuntu/.kube/config
+
+    k8s_workers:
+      hosts:
+        worker-node-1:
+          ansible_host: 13.234.115.135

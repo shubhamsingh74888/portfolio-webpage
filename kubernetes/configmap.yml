@@ -4,19 +4,13 @@ metadata:
   name: portfolio-config
   namespace: portfolio
 data:
-  # MongoDB
   MONGO_DATABASE: "portfolio"
-
-  # Backend
   NODE_ENV: "production"
   PORT: "5000"
-  FRONTEND_URL: "http://3.110.186.119:31851/"  # Replace with your Node IP or domain
-
- # SMTP
+  FRONTEND_URL: "http://13.234.115.135:31441"
   SMTP_HOST: "smtp.gmail.com"
   SMTP_PORT: "587"
   SMTP_SECURE: "false"
   SMTP_FROM: "shubhamsingh74888@gmail.com"
   CONTACT_RECEIVER_EMAIL: "shubhamsingh74888@gmail.com"
   SMTP_USER: "shubhamsingh74888@gmail.com"
-

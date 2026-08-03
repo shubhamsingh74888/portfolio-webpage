@@ -1,0 +1,364 @@
+---
+# ─────────────────────────────────────────────────────────────────────────────
+# Practice Ansible Playbook
+# Installs: Docker, Jenkins, kubectl, Helm, Trivy, AWS CLI
+#
+# Run with:
+#   ansible-playbook -i inventory.ini playbook.yml
+#
+# Dry run (see what would change without doing it):
+#   ansible-playbook -i inventory.ini playbook.yml --check
+#
+# Run only specific tags:
+#   ansible-playbook -i inventory.ini playbook.yml --tags docker
+#   ansible-playbook -i inventory.ini playbook.yml --tags jenkins
+# ─────────────────────────────────────────────────────────────────────────────
+
+- name: Setup Jenkins Server
+  hosts: jenkins
+  become: true          # run as sudo
+  gather_facts: true    # collect OS info (used in docker repo step)
+
+  vars:
+    java_version:    "17"
+    jenkins_port:    8080
+    kubectl_version: "v1.29.0"
+    helm_version:    "v3.14.0"
+    trivy_version:   "0.50.1"
+
+  tasks:
+
+  # ── 1. System update ───────────────────────────────────────────────────────
+  - name: Update apt cache
+    ansible.builtin.apt:
+      update_cache: true
+      cache_valid_time: 3600
+    tags: always
+
+  - name: Install base packages
+    ansible.builtin.apt:
+      name:
+        - curl
+        - wget
+        - git
+        - unzip
+        - jq
+        - vim
+        - ca-certificates
+        - gnupg
+        - lsb-release
+        - python3-pip
+      state: present
+    tags: always
+
+  # ── 2. Docker ──────────────────────────────────────────────────────────────
+  - name: Remove old Docker versions if present
+    ansible.builtin.apt:
+      name:
+        - docker
+        - docker-engine
+        - docker.io
+        - containerd
+        - runc
+      state: absent
+    tags: docker
+
+  - name: Add Docker GPG key
+    ansible.builtin.apt_key:
+      url: https://download.docker.com/linux/ubuntu/gpg
+      state: present
+      keyring: /usr/share/keyrings/docker-archive-keyring.gpg
+    tags: docker
+
+  - name: Add Docker apt repository
+    ansible.builtin.apt_repository:
+      repo: >
+        deb [arch=amd64 signed-by=/usr/share/keyrings/docker-archive-keyring.gpg]
+        https://download.docker.com/linux/ubuntu
+        {{ ansible_distribution_release }} stable
+      state: present
+      filename: docker
+    tags: docker
+
+  - name: Install Docker engine
+    ansible.builtin.apt:
+      name:
+        - docker-ce
+        - docker-ce-cli
+        - containerd.io
+        - docker-buildx-plugin
+        - docker-compose-plugin
+      state: present
+      update_cache: true
+    tags: docker
+
+  - name: Start and enable Docker service
+    ansible.builtin.systemd:
+      name: docker
+      state: started
+      enabled: true
+    tags: docker
+
+  - name: Add ubuntu user to docker group
+    ansible.builtin.user:
+      name: ubuntu
+      groups: docker
+      append: true
+    tags: docker
+
+  - name: Verify Docker installed
+    ansible.builtin.command: docker --version
+    register: docker_version
+    changed_when: false
+    tags: docker
+
+  - name: Show Docker version
+    ansible.builtin.debug:
+      msg: "{{ docker_version.stdout }}"
+    tags: docker
+
+  # ── 3. Java (required for Jenkins) ────────────────────────────────────────
+  - name: Install Java {{ java_version }}
+    ansible.builtin.apt:
+      name: "openjdk-{{ java_version }}-jdk"
+      state: present
+      update_cache: true
+    tags: jenkins
+
+  - name: Verify Java installed
+    ansible.builtin.command: java -version
+    register: java_ver
+    changed_when: false
+    tags: jenkins
+
+  - name: Show Java version
+    ansible.builtin.debug:
+      msg: "{{ java_ver.stderr }}"   # java -version prints to stderr
+    tags: jenkins
+
+  # ── 4. Jenkins ─────────────────────────────────────────────────────────────
+  - name: Download Jenkins GPG key
+    ansible.builtin.get_url:
+      url: https://pkg.jenkins.io/debian-stable/jenkins.io-2026.key
+      dest: /tmp/jenkins.key
+      mode: '0644'
+      force: true
+    tags: jenkins
+
+  - name: Dearmor Jenkins GPG key
+    ansible.builtin.command:
+      cmd: gpg --yes --dearmor -o /usr/share/keyrings/jenkins-keyring.gpg /tmp/jenkins.key
+    tags: jenkins
+
+  - name: Add Jenkins apt repository
+    ansible.builtin.apt_repository:
+      repo: "deb [signed-by=/usr/share/keyrings/jenkins-keyring.gpg] https://pkg.jenkins.io/debian-stable binary/"
+      state: present
+      filename: jenkins
+      update_cache: true
+    tags: jenkins
+
+  - name: Install Jenkins
+    ansible.builtin.apt:
+      name: jenkins
+      state: present
+      update_cache: true
+    tags: jenkins
+
+  - name: Add jenkins user to docker group
+    ansible.builtin.user:
+      name: jenkins
+      groups: docker
+      append: true
+    tags: jenkins
+
+  - name: Start and enable Jenkins service
+    ansible.builtin.systemd:
+      name: jenkins
+      state: started
+      enabled: true
+      daemon_reload: true
+    tags: jenkins
+
+  - name: Wait for Jenkins to be ready
+    ansible.builtin.uri:
+      url: "http://localhost:{{ jenkins_port }}/login"
+      status_code: 200
+    register: jenkins_check
+    until: jenkins_check.status == 200
+    retries: 15
+    delay: 10
+    tags: jenkins
+
+  - name: Get Jenkins initial admin password
+    ansible.builtin.command:
+      cmd: cat /var/lib/jenkins/secrets/initialAdminPassword
+    register: jenkins_password
+    changed_when: false
+    tags: jenkins
+
+  - name: Show Jenkins admin password
+    ansible.builtin.debug:
+      msg: "Jenkins is ready at http://{{ ansible_host }}:{{ jenkins_port }} | Password: {{ jenkins_password.stdout }}"
+    tags: jenkins
+
+  # ── 5. kubectl ─────────────────────────────────────────────────────────────
+  - name: Download kubectl {{ kubectl_version }}
+    ansible.builtin.get_url:
+      url: "https://dl.k8s.io/release/{{ kubectl_version }}/bin/linux/amd64/kubectl"
+      dest: /usr/local/bin/kubectl
+      mode: '0755'
+      force: false
+    tags: kubectl
+
+  - name: Verify kubectl installed
+    ansible.builtin.command: kubectl version --client
+    register: kubectl_ver
+    changed_when: false
+    tags: kubectl
+
+  - name: Show kubectl version
+    ansible.builtin.debug:
+      msg: "{{ kubectl_ver.stdout }}"
+    tags: kubectl
+
+  # ── 6. Helm ────────────────────────────────────────────────────────────────
+  - name: Download Helm install script
+    ansible.builtin.get_url:
+      url: https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
+      dest: /tmp/get-helm.sh
+      mode: '0700'
+    tags: helm
+
+  - name: Install Helm {{ helm_version }}
+    ansible.builtin.command:
+      cmd: /tmp/get-helm.sh
+      creates: /usr/local/bin/helm   # skip if helm already exists
+    environment:
+      DESIRED_VERSION: "{{ helm_version }}"
+    tags: helm
+
+  - name: Remove Helm install script
+    ansible.builtin.file:
+      path: /tmp/get-helm.sh
+      state: absent
+    tags: helm
+
+  - name: Verify Helm installed
+    ansible.builtin.command: helm version
+    register: helm_ver
+    changed_when: false
+    tags: helm
+
+  - name: Show Helm version
+    ansible.builtin.debug:
+      msg: "{{ helm_ver.stdout }}"
+    tags: helm
+
+  # ── 7. Trivy ───────────────────────────────────────────────────────────────
+  - name: Download Trivy GPG key
+    ansible.builtin.get_url:
+      url: https://aquasecurity.github.io/trivy-repo/deb/public.key
+      dest: /tmp/trivy.key
+      mode: '0644'
+      force: true
+    tags: trivy
+
+  - name: Dearmor Trivy GPG key
+    ansible.builtin.command:
+      cmd: gpg --yes --dearmor -o /usr/share/keyrings/trivy-keyring.gpg /tmp/trivy.key
+    tags: trivy
+
+  - name: Remove stale Trivy repo file if exists
+    ansible.builtin.file:
+      path: /etc/apt/sources.list.d/trivy.list
+      state: absent
+    tags: trivy
+
+  - name: Add Trivy apt repository
+    ansible.builtin.apt_repository:
+      repo: "deb [signed-by=/usr/share/keyrings/trivy-keyring.gpg] https://aquasecurity.github.io/trivy-repo/deb generic main"
+      state: present
+      filename: trivy
+      update_cache: true
+    tags: trivy
+
+  - name: Install Trivy
+    ansible.builtin.apt:
+      name: trivy
+      state: present
+      update_cache: true
+    tags: trivy
+
+  - name: Verify Trivy installed
+    ansible.builtin.command: trivy --version
+    register: trivy_ver
+    changed_when: false
+    tags: trivy
+
+  - name: Show Trivy version
+    ansible.builtin.debug:
+      msg: "{{ trivy_ver.stdout }}"
+    tags: trivy
+
+  # ── 8. AWS CLI ─────────────────────────────────────────────────────────────
+  - name: Check if AWS CLI already installed
+    ansible.builtin.command: aws --version
+    register: aws_check
+    changed_when: false
+    failed_when: false
+    tags: awscli
+
+  - name: Download AWS CLI v2
+    ansible.builtin.get_url:
+      url: https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip
+      dest: /tmp/awscliv2.zip
+      mode: '0644'
+    when: aws_check.rc != 0
+    tags: awscli
+
+  - name: Unzip AWS CLI
+    ansible.builtin.unarchive:
+      src: /tmp/awscliv2.zip
+      dest: /tmp/
+      remote_src: true
+    when: aws_check.rc != 0
+    tags: awscli
+
+  - name: Install AWS CLI
+    ansible.builtin.command: /tmp/aws/install
+    when: aws_check.rc != 0
+    tags: awscli
+
+  - name: Clean up AWS CLI installer
+    ansible.builtin.file:
+      path: "{{ item }}"
+      state: absent
+    loop:
+      - /tmp/awscliv2.zip
+      - /tmp/aws
+    when: aws_check.rc != 0
+    tags: awscli
+
+  - name: Verify AWS CLI installed
+    ansible.builtin.command: aws --version
+    register: aws_ver
+    changed_when: false
+    tags: awscli
+
+  - name: Show AWS CLI version
+    ansible.builtin.debug:
+      msg: "{{ aws_ver.stdout }}"
+    tags: awscli
+
+  # ── 9. Final summary ───────────────────────────────────────────────────────
+  - name: "=== ALL DONE — Tool Summary ==="
+    ansible.builtin.debug:
+      msg:
+        - "✅ Docker:   {{ docker_version.stdout  | default('skipped') }}"
+        - "✅ Jenkins:  http://{{ ansible_host }}:{{ jenkins_port }}"
+        - "✅ kubectl:  {{ kubectl_ver.stdout     | default('skipped') }}"
+        - "✅ Helm:     {{ helm_ver.stdout        | default('skipped') }}"
+        - "✅ Trivy:    {{ trivy_ver.stdout       | default('skipped') }}"
+        - "✅ AWS CLI:  {{ aws_ver.stdout         | default('skipped') }}"
+    tags: always

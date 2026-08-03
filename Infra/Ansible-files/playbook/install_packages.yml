@@ -1,0 +1,26 @@
+- name: Install Packages
+  hosts: portfolio_server
+  become: yes
+
+  vars:
+    packages_to_install:
+      - tree
+      - zip
+      - unzip
+      - wget
+      - apache2
+
+  tasks:
+    - name: Install packages
+      apt:
+        name: "{{ item }}"
+        state: present
+      loop: "{{ packages_to_install }}"
+      when: ansible_facts["distribution"] == "Ubuntu"
+    
+    - name: Show Message
+      debug:
+       msg: "installing {{ item }}"
+      loop: "{{ packages_to_install }}
+      when: ansible_facts["distribution"] == "Ubuntu
+

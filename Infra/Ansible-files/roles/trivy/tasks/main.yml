@@ -1,0 +1,30 @@
+---
+# ── ADD TRIVY REPO ────────────────────────────────
+- name: Download Trivy GPG key
+  get_url:
+    url: https://aquasecurity.github.io/trivy-repo/deb/public.key
+    dest: /etc/apt/keyrings/trivy.asc
+    mode: '0644'
+
+- name: Add Trivy repository
+  apt_repository:
+    repo: "deb [signed-by=/etc/apt/keyrings/trivy.asc] https://aquasecurity.github.io/trivy-repo/deb generic main"
+    state: present
+    filename: trivy
+
+# ── INSTALL ───────────────────────────────────────
+- name: Install Trivy
+  apt:
+    name: trivy
+    state: present
+    update_cache: yes
+
+# ── VERIFY ────────────────────────────────────────
+- name: Verify Trivy installation
+  command: trivy --version
+  register: trivy_version
+  changed_when: false
+
+- name: Print Trivy version
+  debug:
+    msg: "Trivy installed: {{ trivy_version.stdout }}"

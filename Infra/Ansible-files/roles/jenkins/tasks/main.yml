@@ -1,0 +1,135 @@
+---
+# ── INSTALL JAVA 21 ───────────────────────────────
+- name: Install Java 21
+  apt:
+    name: openjdk-21-jdk
+    state: present
+    update_cache: yes
+
+- name: Remove Java 17 completely
+  apt:
+    name:
+      - openjdk-17-jdk
+      - openjdk-17-jre
+      - openjdk-17-jdk-headless
+      - openjdk-17-jre-headless
+    state: absent
+    purge: yes
+  ignore_errors: yes
+
+- name: Set Java 21 as default
+  alternatives:
+    name: java
+    path: /usr/lib/jvm/java-21-openjdk-amd64/bin/java
+    priority: 100
+
+- name: Verify Java version
+  command: java -version
+  register: java_ver
+  changed_when: false
+
+- name: Print Java version
+  debug:
+    msg: "{{ java_ver.stderr }}"
+
+# ── JENKINS REPO ──────────────────────────────────
+- name: Ensure keyrings directory exists
+  file:
+    path: /etc/apt/keyrings
+    state: directory
+    mode: '0755'
+
+- name: Download Jenkins GPG key (2026)
+  get_url:
+    url: https://pkg.jenkins.io/debian-stable/jenkins.io-2026.key
+    dest: /etc/apt/keyrings/jenkins-keyring.asc
+    mode: '0644'
+    force: yes
+
+- name: Add Jenkins repository
+  apt_repository:
+    repo: "deb [signed-by=/etc/apt/keyrings/jenkins-keyring.asc] https://pkg.jenkins.io/debian-stable binary/"
+    state: present
+    filename: jenkins
+    update_cache: yes
+
+# ── INSTALL JENKINS ───────────────────────────────
+- name: Install Jenkins
+  apt:
+    name: jenkins
+    state: present
+    update_cache: yes
+
+# ── SYSTEMD OVERRIDE FOR JAVA 21 ──────────────────
+- name: Create Jenkins systemd override directory
+  file:
+    path: /etc/systemd/system/jenkins.service.d
+    state: directory
+    mode: '0755'
+
+- name: Create Jenkins systemd override to force Java 21
+  copy:
+    dest: /etc/systemd/system/jenkins.service.d/override.conf
+    content: |
+      [Service]
+      Environment="JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64"
+      ExecStart=
+      ExecStart=/usr/lib/jvm/java-21-openjdk-amd64/bin/java \
+                -Djava.awt.headless=true \
+                -jar /usr/share/java/jenkins.war \
+                --webroot=/var/cache/jenkins/war \
+                --httpPort=8080
+    mode: '0644'
+
+# ── START SERVICE ─────────────────────────────────
+- name: Reload systemd daemon
+  systemd:
+    daemon_reload: yes
+
+- name: Reset failed Jenkins service state
+  command: systemctl reset-failed jenkins
+  ignore_errors: yes
+
+- name: Start and enable Jenkins service
+  systemd:
+    name: jenkins
+    state: restarted
+    enabled: yes
+
+- name: Wait for Jenkins to come up on port 8080
+  wait_for:
+    port: 8080
+    delay: 15
+    timeout: 120
+
+# ── CHECK WIZARD STATUS ───────────────────────────
+- name: Check if wizard is completed
+  stat:
+    path: /var/lib/jenkins/secrets/initialAdminPassword
+  register: wizard_file
+
+- name: Read initial admin password
+  command: cat /var/lib/jenkins/secrets/initialAdminPassword
+  register: jenkins_password
+  when: wizard_file.stat.exists
+  changed_when: false
+
+- name: Show initial password and wizard URL
+  debug:
+    msg:
+      - "Jenkins URL: http://{{ ansible_host }}:8080"
+      - "Initial Admin Password: {{ jenkins_password.stdout }}"
+  when: wizard_file.stat.exists
+
+- name: Show wizard done status
+  debug:
+    msg: "Wizard done - Jenkins ready"
+  when: not wizard_file.stat.exists
+
+# ── FIREWALL ──────────────────────────────────────
+- name: Allow Jenkins port through firewall
+  ufw:
+    rule: allow
+    port: '8080'
+    proto: tcp
+  ignore_errors: yes

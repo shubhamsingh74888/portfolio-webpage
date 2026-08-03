@@ -1,0 +1,97 @@
+---
+- name: Install and configure Jenkins
+  hosts: jenkins
+  become: yes
+
+  vars_files:
+    - ../secrets.yml
+
+  vars:
+    jenkins_port: 8080
+    jenkins_url: "http://{{ ansible_host }}:8080"
+    java_version: openjdk-17-jdk
+
+  tasks:
+
+    # ── JAVA ──────────────────────────────────────────
+    - name: Install Java
+      apt:
+        name: "{{ java_version }}"
+        state: present
+        update_cache: yes
+
+    # ── JENKINS REPO ──────────────────────────────────
+    - name: Ensure keyrings directory exists
+      file:
+        path: /etc/apt/keyrings
+        state: directory
+        mode: '0755'
+
+    - name: Download Jenkins GPG key (2026)
+      get_url:
+        url: https://pkg.jenkins.io/debian-stable/jenkins.io-2026.key
+        dest: /etc/apt/keyrings/jenkins-keyring.asc
+        mode: '0644'
+
+    - name: Add Jenkins repository
+      apt_repository:
+        repo: "deb [signed-by=/etc/apt/keyrings/jenkins-keyring.asc] https://pkg.jenkins.io/debian-stable binary/"
+        state: present
+        filename: jenkins
+
+    # ── INSTALL ───────────────────────────────────────
+    - name: Install Jenkins
+      apt:
+        name: jenkins
+        state: present
+        update_cache: yes
+
+    # ── START SERVICE ─────────────────────────────────
+    - name: Start and enable Jenkins service
+      systemd:
+        name: jenkins
+        state: started
+        enabled: yes
+
+    # ── WAIT FOR JENKINS ──────────────────────────────
+    - name: Wait for Jenkins to come up on port 8080
+      uri:
+        url: "{{ jenkins_url }}"
+        status_code: [200, 403]
+        validate_certs: no
+      register: result
+      until: result.status in [200, 403]
+      retries: 15
+      delay: 10
+
+    # ── CHECK WIZARD STATUS ───────────────────────────
+    - name: Check if wizard is completed
+      stat:
+        path: /var/lib/jenkins/secrets/initialAdminPassword
+      register: init_pass_file
+
+    - name: Show wizard status
+      debug:
+        msg: "{{ 'Wizard NOT done yet - complete it at ' + jenkins_url + ' then run playbook again' if init_pass_file.stat.exists else 'Wizard done - proceeding with full setup' }}"
+
+    # ── UPDATE JENKINS URL ────────────────────────────
+    # runs always - useful when EC2 IP changes
+    - name: Update Jenkins URL in config
+      lineinfile:
+        path: /var/lib/jenkins/jenkins.model.JenkinsLocationConfiguration.xml
+        regexp: '<jenkinsUrl>'
+        line: "  <jenkinsUrl>{{ jenkins_url }}/</jenkinsUrl>"
+      notify: Restart Jenkins
+
+    # ── OPEN FIREWALL ─────────────────────────────────
+    - name: Allow port 8080 through firewall
+      ufw:
+        rule: allow
+        port: "8080"
+        proto: tcp
+
+  handlers:
+    - name: Restart Jenkins
+      systemd:
+        name: jenkins
+        state: restarted

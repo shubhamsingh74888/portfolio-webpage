@@ -1,0 +1,11 @@
+---
+jenkins_port: 8080
+java_version: openjdk-17-jdk
+jenkins_plugins:
+  - git
+  - docker-workflow
+  - workflow-aggregator
+  - kubernetes
+  - sonar
+  - blueocean
+  - credentials-binding
