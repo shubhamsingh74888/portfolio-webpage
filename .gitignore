@@ -62,3 +62,9 @@ Infra/*.tfstate.backup
 Infra/*.tfstate
 Infra/*.tfstate.backup
 Infra/Ansible-files/secrets.yml
+
+# Ansible secrets - never commit
+Infra/Ansible-files/secrets.yml
+Infra/ansible/group_vars/vault.yml
+Infra/ansible/**/*vault*
+Infra/ansible/**/*secret*
