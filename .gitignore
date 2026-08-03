@@ -61,3 +61,4 @@ Infra/*.tfstate.backup
 # Stray tfstate files
 Infra/*.tfstate
 Infra/*.tfstate.backup
+Infra/Ansible-files/secrets.yml
