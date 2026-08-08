@@ -40,7 +40,7 @@ resource "aws_security_group" "k8s_sg" {
 resource "aws_instance" "k8s_master" {
   ami                         = var.jenkins_ami
   instance_type               = var.node_instance_type
-  key_name                    = data.aws_key_pair.jenkins.key_name
+  key_name                    = aws_key_pair.main.key_name
   subnet_id                   = module.vpc.public_subnets[0]
   vpc_security_group_ids      = [aws_security_group.k8s_sg.id]
   associate_public_ip_address = true
@@ -61,7 +61,7 @@ resource "aws_instance" "k8s_workers" {
   count                       = var.node_desired_size
   ami                         = var.jenkins_ami
   instance_type               = var.node_instance_type
-  key_name                    = data.aws_key_pair.jenkins.key_name
+  key_name                    = aws_key_pair.main.key_name
   subnet_id                   = module.vpc.public_subnets[0]
   vpc_security_group_ids      = [aws_security_group.k8s_sg.id]
   associate_public_ip_address = true

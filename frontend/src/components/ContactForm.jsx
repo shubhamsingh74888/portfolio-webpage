@@ -3,10 +3,10 @@ import { motion } from "framer-motion"
 import { FaGithub, FaLinkedin, FaTwitter, FaEnvelope, FaCheckCircle, FaExclamationCircle } from "react-icons/fa"
 
 const SOCIAL_LINKS = [
-  { name: "GitHub",   icon: FaGithub,   href: "https://github.com/shubhamsingh74888",       cls: "hover:text-white hover:bg-gray-700" },
-  { name: "LinkedIn", icon: FaLinkedin,  href: "https://linkedin.com/in/YOUR_LINKEDIN",      cls: "hover:text-blue-400 hover:bg-blue-950" },
-  { name: "Twitter",  icon: FaTwitter,   href: "https://twitter.com/YOUR_TWITTER",           cls: "hover:text-sky-400 hover:bg-sky-950" },
-  { name: "Email",    icon: FaEnvelope,  href: "mailto:shubhamsingh74888@gmail.com",         cls: "hover:text-green-400 hover:bg-green-950" }
+  { name: "GitHub",   icon: FaGithub,   href: "https://github.com/shubhamsingh74888",        cls: "hover:text-white hover:bg-gray-700" },
+  { name: "LinkedIn", icon: FaLinkedin, href: "https://www.linkedin.com/in/shubham-singh-aa858b35a", cls: "hover:text-blue-400 hover:bg-blue-950" },
+  { name: "Twitter",  icon: FaTwitter,  href: "#",                                           cls: "hover:text-sky-400 hover:bg-sky-950" },
+  { name: "Email",    icon: FaEnvelope, href: "mailto:shubhamsingh74888@gmail.com",          cls: "hover:text-green-400 hover:bg-green-950" }
 ]
 
 export default function ContactForm() {

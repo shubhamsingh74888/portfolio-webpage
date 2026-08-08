@@ -4,7 +4,7 @@ resource "aws_security_group" "jenkins" {
   vpc_id      = module.vpc.vpc_id
 
   ingress {
-    description = "SSH from your IP only"
+    description = "SSH"
     from_port   = 22
     to_port     = 22
     protocol    = "tcp"
@@ -12,7 +12,7 @@ resource "aws_security_group" "jenkins" {
   }
 
   ingress {
-    description = "Jenkins UI from your IP"
+    description = "Jenkins UI"
     from_port   = 8080
     to_port     = 8080
     protocol    = "tcp"
@@ -29,14 +29,15 @@ resource "aws_security_group" "jenkins" {
   tags = { Name = "${var.project_name}-jenkins-sg" }
 }
 
-data "aws_key_pair" "jenkins" {
-  key_name = "${var.project_name}-key"
+resource "aws_key_pair" "main" {
+  key_name   = "${var.project_name}-key"
+  public_key = file(var.jenkins_public_key_path)
 }
 
 resource "aws_instance" "jenkins" {
   ami                         = var.jenkins_ami
   instance_type               = var.jenkins_instance_type
-  key_name                    = data.aws_key_pair.jenkins.key_name
+  key_name                    = aws_key_pair.main.key_name
   subnet_id                   = module.vpc.public_subnets[0]
   vpc_security_group_ids      = [aws_security_group.jenkins.id]
   associate_public_ip_address = true

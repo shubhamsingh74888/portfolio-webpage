@@ -22,17 +22,17 @@ spec:
     spec:
       containers:
         - name: frontend
-          image: shubham74888/portfolio-frontend:v5
+          image: shubham74888/portfolio-frontend:v8
           imagePullPolicy: IfNotPresent                 # Use local image (no registry)
           ports:
             - containerPort: 80
           resources:
             requests:
-              memory: "64Mi"
-              cpu: "50m"
-            limits:
               memory: "128Mi"
               cpu: "100m"
+            limits:
+              memory: "256Mi"
+              cpu: "300m"
           livenessProbe:
             httpGet:
               path: /

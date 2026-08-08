@@ -44,7 +44,7 @@ variable "vpc_cidr" {
 
 variable "jenkins_public_key_path" {
   type    = string
-  default = "~/.ssh/portfolio-key.pub"
+  default = "~/.ssh/instance1-key.pub"
 }
 
 variable "jenkins_ami" {

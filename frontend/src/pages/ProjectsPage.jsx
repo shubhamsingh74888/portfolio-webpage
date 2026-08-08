@@ -24,55 +24,8 @@ export default function ProjectsPage() {
   const [viewMode, setViewMode] = useState('grid')
   const [searchTerm, setSearchTerm] = useState('')
 
-  useEffect(() => {
-    // TEMPORARY DUMMY DATA SO YOU CAN SEE THE PAGE INSTANTLY
-    const dummyData = [
-      {
-        _id: '1',
-        title: 'Kubernetes CI/CD with ArgoCD & Helm',
-        description: 'GitOps pipeline for microservices with automatic rollbacks',
-        category: 'CI/CD',
-        technologies: [{ name: 'Kubernetes' }, { name: 'ArgoCD' }, { name: 'Helm' }],
-        status: 'completed'
-      },
-      {
-        _id: '2',
-        title: 'Multi-Region AWS Infrastructure',
-        description: 'Terraform modules for production-grade cloud setup',
-        category: 'Cloud',
-        technologies: [{ name: 'Terraform' }, { name: 'AWS' }, { name: 'GitHub Actions' }],
-        status: 'completed'
-      },
-      {
-        _id: '3',
-        title: 'Observability Stack',
-        description: 'Prometheus + Grafana + Loki + Alertmanager',
-        category: 'Monitoring',
-        technologies: [{ name: 'Prometheus' }, { name: 'Grafana' }, { name: 'Loki' }],
-        status: 'in-progress'
-      }
-    ]
 
-    setProjects(dummyData)
-    setFilteredProjects(dummyData)
-    setLoading(false)
-  }, [])
-
-  // Real fetch (uncomment when backend is fixed)
-  // useEffect(() => {
-  //   const load = async () => {
-  //     try {
-  //       setLoading(true)
-  //       const res = await projectService.getAllProjects()
-  //       setProjects(res.data || [])
-  //     } catch (err) {
-  //       console.error(err)
-  //     } finally {
-  //       setLoading(false)
-  //     }
-  //   }
-  //   load()
-  // }, [])
+  Real fetch (uncomment when backend is fixed)
 
   const filtered = projects.filter(project => {
     if (selectedCategory !== 'All' && project.category !== selectedCategory) return false
