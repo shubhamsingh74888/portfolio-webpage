@@ -32,7 +32,7 @@ COPY . .
 
 # Build args for environment variables at build time
 # These get baked into the static JS bundle
-ARG VITE_API_URL=http://localhost:5001/api
+ARG VITE_API_URL=/api
 ENV VITE_API_URL=$VITE_API_URL
 
 # Run Vite build — outputs to /app/dist

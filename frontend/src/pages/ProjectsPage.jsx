@@ -24,8 +24,20 @@ export default function ProjectsPage() {
   const [viewMode, setViewMode] = useState('grid')
   const [searchTerm, setSearchTerm] = useState('')
 
-
-  Real fetch (uncomment when backend is fixed)
+  useEffect(() => {
+    const load = async () => {
+      try {
+        setLoading(true)
+        const res = await projectService.getAllProjects()
+        setProjects(res.data || [])
+      } catch (err) {
+        console.error(err)
+      } finally {
+        setLoading(false)
+      }
+    }
+    load()
+  }, [])
 
   const filtered = projects.filter(project => {
     if (selectedCategory !== 'All' && project.category !== selectedCategory) return false
