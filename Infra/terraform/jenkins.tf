@@ -29,15 +29,19 @@ resource "aws_security_group" "jenkins" {
   tags = { Name = "${var.project_name}-jenkins-sg" }
 }
 
-resource "aws_key_pair" "main" {
-  key_name   = "${var.project_name}-key"
-  public_key = file(var.jenkins_public_key_path)
+#resource "aws_key_pair" "main" {
+# key_name   = var.key_pair_name
+# public_key = file(var.jenkins_public_key_path)
+#}
+
+data "aws_key_pair" "main" {
+  key_name = var.key_pair_name
 }
 
 resource "aws_instance" "jenkins" {
   ami                         = var.jenkins_ami
   instance_type               = var.jenkins_instance_type
-  key_name                    = aws_key_pair.main.key_name
+  key_name                    = data.aws_key_pair.main.key_name
   subnet_id                   = module.vpc.public_subnets[0]
   vpc_security_group_ids      = [aws_security_group.jenkins.id]
   associate_public_ip_address = true
@@ -49,6 +53,10 @@ resource "aws_instance" "jenkins" {
     delete_on_termination = true
     encrypted             = true
   }
+
+
+  user_data = file("${path.module}/scripts/jenkins-setup.sh")
+
 
   tags = { Name = "${var.project_name}-jenkins" }
 }

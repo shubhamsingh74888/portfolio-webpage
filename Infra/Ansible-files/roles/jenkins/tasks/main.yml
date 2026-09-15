@@ -32,6 +32,38 @@
   debug:
     msg: "{{ java_ver.stderr }}"
 
+    # ── EBS MOUNT ─────────────────────────────────────
+- name: Check if EBS device has a filesystem
+  command: blkid /dev/nvme1n1
+  register: blkid_result
+  failed_when: false
+  changed_when: false
+
+- name: Format EBS if no filesystem
+  command: mkfs.ext4 /dev/nvme1n1
+  when: blkid_result.rc != 0
+
+- name: Create Jenkins home mount point
+  file:
+    path: /var/lib/jenkins
+    state: directory
+    mode: "0755"
+
+- name: Mount EBS to Jenkins home
+  mount:
+    path: /var/lib/jenkins
+    src: /dev/nvme1n1
+    fstype: ext4
+    opts: defaults,nofail
+    state: mounted
+
+- name: Persist mount in fstab
+  mount:
+    path: /var/lib/jenkins
+    src: /dev/nvme1n1
+    fstype: ext4
+    opts: defaults,nofail
+    state: present
 # ── JENKINS REPO ──────────────────────────────────
 - name: Ensure keyrings directory exists
   file:

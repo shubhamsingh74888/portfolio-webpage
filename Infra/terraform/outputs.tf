@@ -15,3 +15,7 @@ output "k8s_workers_public_ips" {
   description = "Public IPs of the Kubernetes Worker Nodes"
   value       = aws_instance.k8s_workers[*].public_ip
 }
+
+output "jenkins_ebs_volume_id" {
+  value = aws_ebs_volume.jenkins_data.id
+}

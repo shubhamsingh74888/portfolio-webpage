@@ -18,9 +18,9 @@ resource "aws_iam_role_policy" "jenkins" {
     Version = "2012-10-17"
     Statement = [
       {
-        Sid      = "ECRAccess"
-        Effect   = "Allow"
-        Action   = [
+        Sid    = "ECRAccess"
+        Effect = "Allow"
+        Action = [
           "ecr:GetAuthorizationToken",
           "ecr:BatchCheckLayerAvailability",
           "ecr:PutImage",
@@ -36,6 +36,16 @@ resource "aws_iam_role_policy" "jenkins" {
         Effect   = "Allow"
         Action   = ["sns:Publish"]
         Resource = aws_sns_topic.alerts.arn
+      },
+      {
+        Sid    = "SSMReadSecrets"
+        Effect = "Allow"
+        Action = [
+          "ssm:GetParameter",
+          "ssm:GetParameters",
+          "ssm:GetParametersByPath"
+        ]
+        Resource = "arn:aws:ssm:${var.aws_region}:${var.aws_account_id}:parameter/portfolio/*"
       }
     ]
   })
