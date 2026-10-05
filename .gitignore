@@ -72,3 +72,5 @@ kubernetes/secret.yml
 node_modules
 .wrangler
 .dev.vars
+*.swn
+*.swp
