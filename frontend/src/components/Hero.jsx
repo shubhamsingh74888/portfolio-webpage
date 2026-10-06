@@ -109,7 +109,7 @@ export default function Hero() {
       {/* Content */}
       <div className="relative z-10 flex flex-col items-center text-center px-4 max-w-4xl mx-auto">
         <p className={`text-sm tracking-widest uppercase mb-4 font-medium ${isDarkMode ? 'text-[#22d3ee]' : 'text-[#1d6fa4]'}`}>
-          Cloud Support Engineer
+          DevOps Engineer
         </p>
 
         <h1 className={`text-6xl md:text-8xl font-extrabold tracking-tight leading-none mb-2 ${isDarkMode ? 'text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-400' : 'text-[#0f2a4a]'}`}>
