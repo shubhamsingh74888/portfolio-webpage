@@ -44,7 +44,7 @@ export default function Navbar() {
             </div>
             <div>
               <span className="text-xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-                DevOps<span className="text-gray-900 dark:text-white">Portfolio</span>
+                Shubham<span className="text-gray-900 dark:text-white">Singh</span>
               </span>
             </div>
           </Link>

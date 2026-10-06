@@ -1,4 +1,4 @@
-﻿{
+{
   "name": "portfolio",
   "version": "1.0.0",
   "private": true,
@@ -8,6 +8,12 @@
     "start": "npm run dev"
   },
   "devDependencies": {
-    "concurrently": "^8.0.0"
+    "@cloudflare/workers-types": "^5.20261005.1",
+    "concurrently": "^8.0.0",
+    "typescript": "^7.0.2",
+    "wrangler": "^4.147.0"
+  },
+  "dependencies": {
+    "hono": "^4.13.13"
   }
 }

@@ -69,3 +69,8 @@ Infra/ansible/group_vars/vault.yml
 Infra/ansible/**/*vault*
 Infra/ansible/**/*secret*
 kubernetes/secret.yml
+node_modules
+.wrangler
+.dev.vars
+*.swn
+*.swp

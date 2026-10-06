@@ -48,7 +48,7 @@ export default function Footer() {
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
           >
-            <h3 className="text-2xl font-bold mb-2">Portfolio</h3>
+            <h3 className="text-2xl font-bold mb-2">Shubham Singh</h3>
             <p className="text-gray-400">
               DevOps Engineer specializing in cloud infrastructure and automation.
             </p>
@@ -107,7 +107,7 @@ export default function Footer() {
         {/* Copyright */}
         <div className="text-center text-gray-400">
           <p>
-            &copy; {currentYear} Portfolio. All rights reserved.
+            &copy; {currentYear} Shubham Singh. All rights reserved.
           </p>
         </div>
       </div>
